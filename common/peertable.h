@@ -40,16 +40,17 @@ peerTable_t* peerTable_init();
 
 // This method creates a table entry and adds it to the end of the table.
 // Note that sockfd is initially -1 and should be -1 whenever disconnected.
-int peerTable_addEntry(peerTable_t *table, char* ip, int sockfd);
+int peerTable_addEntry(peerTable_t *table, peerEntry_t* entry);
+peerEntry_t* peertable_createEntry(char* ip, int sockfd);
+
 
 // This method removes a table entry given the IP of the node to delete. Also fixes next pointers.
 // Returns 1 on success, -1 on failure.
-int peerTable_deleteEntryByIp(peerTable_t *table, char* ip);
+int peertable_deleteEntryByIp(peerTable_t *table, char* ip);
 
 // This method deletes the whole table, freeing memory, etc.
 // Returns 1 on success, -1 on failure.
-void peerTable_destroy(peerTable_t *table);
-
+void peertable_destroy(peerTable_t *table);
 
 
 

@@ -14,7 +14,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/time.h>
-
+#include "../common/utils.h"
 
 
 peerTable_t* peerTable_init(){
@@ -25,31 +25,35 @@ peerTable_t* peerTable_init(){
 	return peertable;
 }
 
-
-int peerTable_addEntry(peerTable_t *table, char* ip, int sockfd) {
-
-	peerEntry_t* tableEntry;
-
-    // Allocate memory for the entry.
-    tableEntry = (peerEntry_t*)malloc(sizeof(peerEntry_t));
+peerEntry_t* peerTable_createEntry(char* ip, int sockfd){
+	// Allocate memory for the entry.
+    peerEntry_t* peerEntry = (peerEntry_t*)malloc(sizeof(peerEntry_t));
 
     // Set initial fields for the entry.
-    memcpy(tableEntry->ip, ip, IP_LEN);
-    tableEntry->sockfd = sockfd;
-    tableEntry->timestamp = time(NULL);
-    tableEntry->next = NULL;
+    memcpy(peerEntry->ip, ip, IP_LEN);
+    peerEntry->sockfd = sockfd;
+    peerEntry->timestamp = getCurrentTime();
+    peerEntry->next = NULL;
+
+  	return peerEntry;
+}
+
+
+
+
+int peerTable_addEntry(peerTable_t *table, peerEntry_t* entry) {
 
     // when table is empty.
     if (table->size == 0) {
-    	table->head = tableEntry;
-    	table->tail = tableEntry;
+    	table->head = entry;
+    	table->tail = entry;
     	table->size = table->size + 1;
         return 1;
     }
 
 
     // when not empty, append to last
-    table->tail->next = tableEntry;
+    table->tail->next = entry;
     table->tail = table->tail->next;
 
    	return 1;
@@ -109,11 +113,40 @@ void peerTable_destroy(peerTable_t *table) {
 }
 
 
+// check if the table has a peer with the same IP as the peer
+int peerTable_existPeer(peerTable_t *table, peerEntry_t* entry){
+	if(table->size == 0) return -1;
+	peerEntry_t* iter = table->head;
+	while(iter != NULL){
+		if(strcmp(entry->ip, iter->ip) == 0){
+			return 1;
+		}
+		iter = iter->next;
+	}
+
+	return -1;
+}
 
 
 
+/**
+ * search the peerTable to find the peerEntry identified by ip
+ * return it if found, return NULL if not
+ */
+
+peerEntry_t* peerTable_searchEntryByIp(peerTable_t* table, char* ip){
+	//TODO:
+}
 
 
+/**
+ * refresh the peerEntry's timestamp to latest time
+ * @param  entry [description]
+ * @return       [description]
+ */
+int peerTable_refreshTimeStamp(peerEntry_t* entry){
+	//TODO:
+}
 
 
 

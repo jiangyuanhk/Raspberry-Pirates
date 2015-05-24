@@ -13,21 +13,19 @@
 
 
 
-/* The packet data structure sending from tracker to peer */
+/* pkt from tracker to peer */
 typedef struct segment_tracker {
 // time interval that the peer should sending alive message periodically int interval;
 	int interval;
 // piece length
 	int piece_len;
-// file number in the file table -- optional
-	int file_table_size;
 // file table of the tracker -- your own design
-	Node* file_table[MAX_FILE_NUM];
+	fileTable_t filetable;
 } ptp_tracker_t;
 
 
 
-/* The packet data structure sending from peer to tracker */
+/* pkt from peer to tracker */
 typedef struct segment_peer {
 	// protocol length
 	int protocol_len;
@@ -41,17 +39,21 @@ typedef struct segment_peer {
 	char peer_ip[IP_LEN];
 	// listening port number in p2p
 	int port;
-	// the number of files in the local file table -- optional
-	int file_table_size;
-	// file table of the client -- your own design
-	Node file_table[MAX_FILE_NUM];
+
+	fileTable_t filetable;
 }ptp_peer_t;
 
 
 
-/****** tracker side receive and send ******/
-int tracker_recvPkt(int connection, ptp_peer_t * pkt);
-int tracker_sendPkt(int connection, ptp_tracker_t * pkt);
+/****** tracker side APIs ******/
+int pkt_tracker_recvPkt(int connection, ptp_peer_t* pkt);
+int pkt_tracker_sendPkt(int connection, ptp_tracker_t* pkt);
+
+
+
+
+
+
 
 
 /****** peer side receive and send ******/
