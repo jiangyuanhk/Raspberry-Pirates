@@ -17,62 +17,98 @@
 
 
 
-void tracker_initPeerTable(){
-	tracker_peertable_headPtr = NULL;
-	tracker_peertable_tailPtr = NULL;
-	tracker_peertable_mutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
-	pthread_mutex_init(tracker_peertable_mutex, NULL);
-}
-
-void peer_initPeerTable(){
-	peer_peertable_headPtr = NULL;
-	peer_peertable_tailPtr = NULL;
-	peer_peertable_mutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
-	pthread_mutex_init(peer_peertable_mutex, NULL);
+peerTable_t* peerTable_init(){
+	peerTable_t *peertable = (peerTable_t*) malloc(sizeof(peerTable_t));
+	peertable->head = NULL;
+	peertable->tail = NULL;
+	peertable->size = 0;
+	return peertable;
 }
 
 
+int peerTable_addEntry(peerTable_t *table, char* ip, int sockfd) {
+
+	peerEntry_t* tableEntry;
+
+    // Allocate memory for the entry.
+    tableEntry = (peerEntry_t*)malloc(sizeof(peerEntry_t));
+
+    // Set initial fields for the entry.
+    memcpy(tableEntry->ip, ip, IP_LEN);
+    tableEntry->sockfd = sockfd;
+    tableEntry->timestamp = time(NULL);
+    tableEntry->next = NULL;
+
+    // when table is empty.
+    if (table->size == 0) {
+    	table->head = tableEntry;
+    	table->tail = tableEntry;
+    	table->size = table->size + 1;
+        return 1;
+    }
+
+
+    // when not empty, append to last
+    table->tail->next = tableEntry;
+    table->tail = table->tail->next;
+
+   	return 1;
+}
 
 
 
-void updatePeerTable(tracker_peer_t* entryPtr){
-	char* ip = entryPtr->ip;
+// This method removes a table entry given the IP of the node to delete. Also fixes next pointers.
+// Returns 1 on success, -1 on failure.
+int peerTable_deleteEntryByIp(peerTable_t *table, char* ip) {
 
-	//search table to find the entry with same ip
-	pthread_mutex_lock(tracker_peertable_mutex);
-	tracker_peer_t* iter = tracker_peertable_headPtr;
-	while(iter != NULL){
-		if(strcmp(iter->ip, ip) == 0)
-			break;
+
+	if(table->size == 0) return -1; //empty table
+
+	pthread_mutex_lock(table->peertable_mutex);
+	peerEntry_t* dummy = (peerEntry_t*)malloc(sizeof(peerEntry_t));
+	dummy->next = table->head;
+	peerEntry_t* iter = dummy;
+
+	while(iter->next != NULL){
+		if(strcmp(iter->next->ip, ip) == 0){
+
+			peerEntry_t* temp = iter->next;
+			iter->next = iter->next->next;
+			free(temp);
+			free(dummy);
+			table->size -= 1;
+			pthread_mutex_unlock(table->peertable_mutex);
+			return 1;
+		}
 		iter = iter->next;
 	}
-	pthread_mutex_unlock(tracker_peertable_mutex);
 
-	//if not found, append the entry in the end of the table
-	//if found, update found enty with this passing entry
-	if(iter == NULL){
-		appendPeerTable(entryPtr);
-	} else {
-		pthread_mutex_lock(tracker_peertable_mutex);
-		//ip are the same so dont need to change its value
-		iter->last_time_stamp = entryPtr->last_time_stamp; //time need to be updated
-		iter->sockfd = entryPtr->sockfd; // TODO: are they always same ?
-		pthread_mutex_unlock(tracker_peertable_mutex);
-	}
+	free(dummy);
+	pthread_mutex_unlock(table->peertable_mutex);
+	return -1; // not found
 
 }
 
-void appendPeerTable(tracker_peer_t* newEntry){
-	pthread_mutex_lock(tracker_peertable_mutex);
-	if(tracker_peertable_headPtr == NULL){
-		tracker_peertable_headPtr = newEntry;
-		tracker_peertable_tailPtr = newEntry;
-	}else{
-		tracker_peertable_tailPtr->next = newEntry;
-		tracker_peertable_tailPtr = newEntry;
+
+
+
+void peerTable_destroy(peerTable_t *table) {
+	if(table->size != 0){
+		pthread_mutex_lock(table->peertable_mutex);
+		peerEntry_t* iter = table->head;
+		while(iter){
+			peerEntry_t* cur = iter;
+			iter = iter->next;
+			free(cur);
+		}
+		pthread_mutex_unlock(table->peertable_mutex);
 	}
-	pthread_mutex_unlock(tracker_peertable_mutex);
+
+	free(table->peertable_mutex);
+	return;
 }
+
+
 
 
 

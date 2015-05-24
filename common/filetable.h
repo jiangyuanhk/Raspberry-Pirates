@@ -20,6 +20,9 @@ typedef struct fileEntry{
 
  char iplist[MAX_PEER_NUM][IP_LEN]; //tracker:  this is a list of peers' ips posessing the file
                                     //peer:     only contains ip of peer itself, put it in iplist[0]
+
+ int peerNum;
+
 }fileEntry_t;
 
 
@@ -31,12 +34,14 @@ typedef struct fileEntry{
 typedef struct fileTable{
     fileEntry_t* head;  // header of file table
     fileEntry_t* tail; // tail of file table (for appending operation), make sure tail's next is NULL
-    int table_size; 
+    int size; 
     pthread_mutex_t* filetable_mutex; // mutex for the file table
 }fileTable_t;
 
 
 
+
+fileTable_t* filetable_init();
    
 
 
@@ -45,7 +50,7 @@ typedef struct fileTable{
  * @param  filename [headPtr of the fileTable to be searched]
  * @return          [description]
  */
-fileEntry_t* searchFileByName(fileTable_t* tablePtr, char*  filename);
+fileEntry_t* filetable_searchFileByName(fileTable_t* tablePtr, char*  filename);
 
 
 /**
@@ -54,7 +59,7 @@ fileEntry_t* searchFileByName(fileTable_t* tablePtr, char*  filename);
  * @param  filename [description]
  * @return          [description]
  */
-int deleteFileEntryByName(fileTable* tablePtr, char* filename);
+int filetable_deleteFileEntryByName(fileTable* tablePtr, char* filename);
 
 
 /**
@@ -62,15 +67,23 @@ int deleteFileEntryByName(fileTable* tablePtr, char* filename);
  * @param headPtr     [description]
  * @param newEntryPtr [description]
  */
-void appendFileEntry(fileTable_t* tablePtr, fileEntry_t* newEntryPtr);
+void filetable_appendFileEntry(fileTable_t* tablePtr, fileEntry_t* newEntryPtr);
 
 
 /**
  * print the fileTale along the way for ease of debugging and checking
  */
-void printFileTable();
+void filetable_printFileTable(fileTable_t* tablePtr);
 
 
+
+/**
+ * update oldEntry in fileTable using newEntry
+ * @param filetablePtr [description]
+ * @param oldEntryPtr  [description]
+ * @param newEntryPtr  [description]
+ */
+void filetable_filetable_updateFile(fileTable_t* filetablePtr, fileEntry_t* oldEntryPtr, fileEntry_t* newEntryPtr);
 
 
 
@@ -79,11 +92,13 @@ void printFileTable();
  * @param  tablePtr [description]
  * @return          [description]
  */
-int getTableSize(fileTable_t* tablePtr);
+int filetable_getTableSize(fileTable_t* tablePtr);
 
 
 
 
+
+void filetable_destroy(fileTable_t* tablePtr);
 
 
 

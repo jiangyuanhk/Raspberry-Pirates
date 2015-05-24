@@ -1,31 +1,32 @@
 #include <pthread.h>
+#include "constants.h"
 
 
 
-//Peer-side peer table, represented as a linkedlist of entries
-//each peer_peer_t represents a "peer"
-typedef struct peer_peertable_entry {
+typedef struct peerEntry {
     // Remote peer IP address, 16 bytes.
     char ip[IP_LEN];
-    //Current downloading file name.
-    char file_name[FILE_NAME_MAX_LEN];
+    
+    char file_name[FILE_NAME_MAX_LEN];  //peer: Current downloading file name
+                                       // trakcer: dont care
     
     //Timestamp of current downloading file.
-    unsigned long file_time_stamp;
+    unsigned long timestamp;       //peer:     TODO: not sure ? 
+                                    //tracker:  latest alive timestamp of this peer
     //TCP connection to this remote peer.
     int sockfd;
     //Pointer to the next peer, linked list.
-    struct _peer_side_peer_t *next;
-} peer_peertable_entry_t;
+    struct peerEntry *next;
+} peerEntry_t;
 
 
 
 typedef struct peer_peertable{
-    peer_peertable_entry_t* headPtr;
-    peer_peertable_entry_t* tailPtr;
+    peerEntry_t* head;
+    peerEntry_t* tail;
     int size;
-    pthread_mutex_t* mutexPtr;
-}peer_peertable_t;
+    pthread_mutex_t* peertable_mutex;
+}peerTable_t;
 
 
 
@@ -34,28 +35,20 @@ typedef struct peer_peertable{
 
 
 
-//tracker side peer table, represented as a linkedlist of entries
-//each trakcer_peer_t represents a "peer"
-typedef struct tracker_peertable_entry {
-    //Remote peer IP address, 16 bytes.
-    char ip[IP_LEN];
-    //Last alive timestamp of this peer.
-    unsigned long last_time_stamp;
-    //TCP connection to this remote peer.
-    int sockfd;
-    //Pointer to the next peer, linked list.
-    struct tracker_peertable_entry *next;
-} tracker_peertable_entry_t;
+// This initializes the peer table.
+peerTable_t* peerTable_init();
 
+// This method creates a table entry and adds it to the end of the table.
+// Note that sockfd is initially -1 and should be -1 whenever disconnected.
+int peerTable_addEntry(peerTable_t *table, char* ip, int sockfd);
 
+// This method removes a table entry given the IP of the node to delete. Also fixes next pointers.
+// Returns 1 on success, -1 on failure.
+int peerTable_deleteEntryByIp(peerTable_t *table, char* ip);
 
-
-typedef struct tracker_peertable {
-    tracker_peertable_entry* head;
-    tracker_peertable_entry* tail;
-    int size;
-    pthread_mutex_t* mutexPtr; 
-} trakcer_peer_table_t;
+// This method deletes the whole table, freeing memory, etc.
+// Returns 1 on success, -1 on failure.
+void peerTable_destroy(peerTable_t *table);
 
 
 
@@ -63,18 +56,6 @@ typedef struct tracker_peertable {
 
 
 
-
-/**trakcer side APIs **/
-
-void tracker_initPeerTable();
-void peer_initPeerTable();
-
-void updatePeerTable(tracker_peer_t* entry);
-void appendPeerTable(tracker_peer_t* entryPtr);
-
-
-
-/** peer side APIs */
 
 
 

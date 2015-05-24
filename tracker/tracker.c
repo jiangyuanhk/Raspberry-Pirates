@@ -28,12 +28,8 @@
 
 
 
-/**************************************************************/
-//delare global variables
-/**************************************************************/
-Node* filetable_headPtr;
-Node* filetable_tailPtr;
-pthread_mutex_t* filetable_mutex; // mutex for file table
+
+fileTable_t* myFileTablePtr;
 
 
 
@@ -201,15 +197,15 @@ int create_server_socket(int portNum) {
 
 
 /**
- * create an entry in the tracker side peer table according to the REGISTER packet receieved from peer
+ * create an entry in the tracker's peertable according to the REGISTER packet receieved from peer
  * @param pkt   [REGISTER packet from peer]
  * @param entry [created entry in the tracker-side peer table]
  * @param connfd [the conneciton between this trakcer and the peer from where the pkt is from]
  */
- void create_peer_table_entry(ptp_peer_t pkt, int connfd, tracker_peer_t* entryPtr){
+ peertable create_peer_table_entry(ptp_peer_t pkt, int connfd, tracker_peer_t* entryPtr){
  	memset(entryPtr, 0, sizeof(tracker_peer_t));
  	memcpy(entryPtr->ip, pkt.peer_ip, IP_LEN);
- 	entryPtr->last_time_stamp = getCurrentTime();
+ 	entryPtr->time_stamp = getCurrentTime();
 
  	entryPtr->sockfd = connfd;
  	entryPtr->next = NULL;
@@ -217,7 +213,11 @@ int create_server_socket(int portNum) {
  }
 
 
-
+/**
+ * 1. initialize a peertable and a filetable
+ * 2. create a HANDSHAKE_PROT and listens to it
+ * 2. 
+ */
 
 
  int main() {
@@ -227,7 +227,7 @@ int create_server_socket(int portNum) {
  	assert(svr_sd >= 0);
 
  	initPeerTable();
- 	initFileTable();
+ 	myFileTablePtr = filetable_init();
 
 	//start a thread to minitor & accept alive message from online peers periodically
 	//remove dead peers if timeout occurs
@@ -253,7 +253,7 @@ int create_server_socket(int portNum) {
 
 		if(pkt_recv.type == REGISTER) {
 
-			tracker_peer_t entry;
+			peer entry;
 			create_peer_table_entry(pkt_recv, connfd, &entry);
 			update_peer_table(&entry);
 
