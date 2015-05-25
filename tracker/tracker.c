@@ -71,10 +71,6 @@ peerTable_t* myPeerTablePtr;
 
 
 
-
-
-
-
  void broadcastFileTable(){
  	tracker_peer_t* peerIter = tracker_peertable_headPtr;
 
@@ -121,8 +117,10 @@ peerTable_t* myPeerTablePtr;
 
 
  void *handshake_handler(void* arg){
+ 	
  	ptp_peer_t pkt_recv;
- 	bzero(&pkt_recv, sizeof(ptp_peer_t));
+ 	memset(&pkt_recv, 0, sizeof(ptp_peer_t));
+
 	int connfd = *(int*) arg;
 
 	while(1) {
@@ -133,16 +131,17 @@ peerTable_t* myPeerTablePtr;
 			case KEEPALIVE:
 
 				char* ip = pkt_recv->ip;
-
-				peerEntry_t* tobeRefreshed = peerTable_searchEntryByIp(myPeerTablePtr, ip)
-
-
-
+				peerEntry_t* tobeRefreshed = peerTable_searchEntryByIp(myPeerTablePtr, ip);
+				peertable_refreshTimestamp(tobeRefreshed);
 				break;
+
 			case FILEUPDATE:
 				
 
-
+				int numOfFiles = pkt_recv->filetablesize;
+				if(numOfFiles > 0){
+					
+				}
 
 
 
@@ -234,21 +233,21 @@ int create_server_socket(int portNum) {
 
 
 
-/**
- * create an entry in the tracker's peertable according to the REGISTER packet receieved from peer
- * @param pkt   [REGISTER packet from peer]
- * @param entry [created entry in the tracker-side peer table]
- * @param connfd [the conneciton between this trakcer and the peer from where the pkt is from]
-*/
- peertable create_peer_table_entry(ptp_peer_t pkt, int connfd, tracker_peer_t* entryPtr){
- 	memset(entryPtr, 0, sizeof(tracker_peer_t));
- 	memcpy(entryPtr->ip, pkt.peer_ip, IP_LEN);
- 	entryPtr->time_stamp = getCurrentTime();
+// *
+//  * create an entry in the tracker's peertable according to the REGISTER packet receieved from peer
+//  * @param pkt   [REGISTER packet from peer]
+//  * @param entry [created entry in the tracker-side peer table]
+//  * @param connfd [the conneciton between this trakcer and the peer from where the pkt is from]
 
- 	entryPtr->sockfd = connfd;
- 	entryPtr->next = NULL;
+//  peertable create_peer_table_entry(ptp_peer_t pkt, int connfd, tracker_peer_t* entryPtr){
+//  	memset(entryPtr, 0, sizeof(tracker_peer_t));
+//  	memcpy(entryPtr->ip, pkt.peer_ip, IP_LEN);
+//  	entryPtr->time_stamp = getCurrentTime();
 
- }
+//  	entryPtr->sockfd = connfd;
+//  	entryPtr->next = NULL;
+
+//  }
 
 
 /**
@@ -301,7 +300,6 @@ int create_server_socket(int portNum) {
 		if(pkt_recv.type == REGISTER) {
 
 			//create a new peerEntry using REGISTER's ip, REGISTER's sockfd, and currentTime;
-
 			peerEntry_t* peerEntry = peerTable_createEntry(pkt->peer_ip, connfd);
 
 			// insert the new peerEntry into table (assert: no peer has same ip as this new peer before insertion)

@@ -87,13 +87,6 @@ void filetable_filetable_updateFile(fileTable_t* filetablePtr, fileEntry_t* oldE
 
 
 
-/**
- * get the table size
- * @param  tablePtr [description]
- * @return          [description]
- */
-int filetable_getTableSize(fileTable_t* tablePtr);
-
 
 
 
@@ -104,6 +97,7 @@ void filetable_destroy(fileTable_t* tablePtr);
 
 
 
+fileEntry_t* filetable_convertEntiesToArray(fileTable_t* tablePtr);
 
 
 

@@ -157,7 +157,7 @@ int filetable_updateFile(fileTable_t* tablePtr, fileEntry_t* oldEntryPtr, fileEn
 
 
 
-void fileTable_destroy(fileTable_t *tablePtr){
+void filetable_destroy(fileTable_t *tablePtr){
 
 	if(tablePtr->size != 0){
 		pthread_mutex_lock(tablePtr->filetable_mutex);
@@ -173,6 +173,35 @@ void fileTable_destroy(fileTable_t *tablePtr){
 	free(tablePtr->filetable_mutex);
 	return;
 }	
+
+
+
+
+
+fileEntry_t* filetable_convertEntiesToArray(fileTable_t* tablePtr){
+	
+	if(tablePtr->size == 0 ) return NULL;
+	
+	
+
+	pthread_mutex_lock(tablePtr->filetable_mutex);
+	
+	//initialize the array
+	int numOfEntries = tablePtr->size;
+	fileEntry_t* arrayHead = (fileEntry_t*)malloc(numOfEntries * sizeof(fileEntry_t));
+
+	fileEntry_t* iter = tablePtr->head;
+	int i = 0;
+	while(iter != NULL){
+		//each time, copy size of fileEntry_t from iter to the array indentified by arrayHead
+		memcpy(arrayHead + i * sizeof(fileEntry_t), iter, sizeof(fileEntry_t));
+		iter = iter->pNext;
+	}
+
+	pthread_mutex_unlock(tablePtr->filetable_mutex);
+	return arrayHead;
+}
+
 
 
 

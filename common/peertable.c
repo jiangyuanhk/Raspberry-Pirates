@@ -144,7 +144,7 @@ peerEntry_t* peerTable_searchEntryByIp(peerTable_t* table, char* ip){
  * @param  entry [description]
  * @return       [description]
  */
-int peerTable_refreshTimeStamp(peerEntry_t* entry){
+int peerTable_refreshTimestamp(peerEntry_t* entry){
 	//TODO:
 }
 
