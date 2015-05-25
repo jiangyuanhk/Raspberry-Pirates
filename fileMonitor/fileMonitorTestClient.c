@@ -11,15 +11,9 @@
 #include <pthread.h>
 #include <signal.h>
 #include <sys/wait.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <sys/time.h>
-#include <assert.h>
-// #include "tracker.h"
-#include "../common/pkt.h"
-#include "../common/filetable.h"
-#include "../common/peertable.h"
-#include "../common/utils.h"
+#include "fileMonitor.h"
+
 
 void printAdd(char* name) {
 	printf("File %s added\n", name);

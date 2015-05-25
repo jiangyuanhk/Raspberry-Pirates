@@ -38,6 +38,15 @@ FileInfo getFileInfo(char* filename);
 */
 FileInfo_table* getAllFilesInfo();
 /*
+*Searches a fileinfo_table struct for a file with the given name
+*
+*@name: the name of the file to search for
+*@table: the table to search in
+*
+*returns an index into that table or -1 if not found
+*/
+int FilesInfo_table_search(char* name, FileInfo_table* fItable);
+/*
 *Sends the necessary alerts by comparing the old and new table
 *
 *@newtable:the newtable after the polling interval
