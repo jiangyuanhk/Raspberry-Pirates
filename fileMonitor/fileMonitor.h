@@ -10,9 +10,9 @@ typedef struct {
 } FileInfo_table;
 
 typedef struct {
-	void (*fileAdded)(char *filename);
-	void (*fileModified)(char *filename);
-	void (*fileDeleted)(char *filename);
+	void (*fileAdded)(char *);
+	void (*fileModified)(char *);
+	void (*fileDeleted)(char *);
 } localFileAlerts;
 
 /*

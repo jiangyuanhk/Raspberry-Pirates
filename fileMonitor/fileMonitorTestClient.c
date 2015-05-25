@@ -31,18 +31,30 @@ void printDelete(char* name) {
 
 int main(int argc, char *argv[]) {
 
-struct localFileAlerts myFuncs {
-	printAdd
-	printModify
-	printDelete
+	void (*Add)(char *);
+	void (*Modify)(char *);
+	void (*Delete)(char *);
+
+	Add = &printAdd;
+	Modify = &printModify;
+	Delete = &printDelete;
+
+	/*Add = (void *)printAdd;
+	Modify = (void *)printModify;
+	Delete = (void *)printDelete;*/
+
+localFileAlerts myFuncs = {
+	Add,
+	Modify,
+	Delete
 };
 
 
 pthread_t monitorthread;
-pthread_create(&monitorthread, NULL, fileMonitorThread, (void*) myFuncs);
+pthread_create(&monitorthread, NULL, fileMonitorThread, (void*) &myFuncs);
 
 sleep(60);
 
-pthread_destroy(monitorthread);
+pthread_exit(&monitorthread);
 
 }
