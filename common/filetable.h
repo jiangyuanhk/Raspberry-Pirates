@@ -97,12 +97,11 @@ void filetable_destroy(fileTable_t* tablePtr);
 
 
 
-fileEntry_t* filetable_convertEntiesToArray(fileTable_t* tablePtr);
+fileEntry_t* filetable_convertArrayToFileEntires(char* buf, int num);
 
 
 
-
-
+char* filetable_convertFileEntriesToArray(fileEntry_t* entry, int num);
 
 
 

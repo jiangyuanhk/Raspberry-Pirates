@@ -40,13 +40,19 @@ int pkt_tracker_recvPkt(int connfd, ptp_peer_t* pkt){
 
 
 	if(filetablesize > 0){
+		//total number of bytes needed for buffer
 		int totalBytes = filetablesize * sizeof(fileEntry_t);
-		head = (fileEntry_t*) malloc(totalBytes);
-		if(recv(connfd, head, totalBytes, 0) < 0) {
+
+		char* buf = (char*) malloc(totalBytes);
+		if(recv(connfd, buf, totalBytes, 0) < 0) {
 			printf("err in %s: failed to receive arraylist of entries\n", __func__);
 			return -1;
 		}
+		head = filetable_convertArrayToFileEntires(buf, filetablesize);
 	}
+
+
+
 
 	//assemble the pieces
 	pkt->type = type;
@@ -54,6 +60,7 @@ int pkt_tracker_recvPkt(int connfd, ptp_peer_t* pkt){
 	pkt->port = port;
 	pkt->filetablesize = filetablesize;
 	pkt->filetableHeadPtr = head;
+	return 1;
 
 }
 
@@ -61,12 +68,6 @@ int pkt_tracker_recvPkt(int connfd, ptp_peer_t* pkt){
 
 
 
-/**
- * 1. get the size of table from ptp_peer_pkt to be sent to tracker
- * 2. send the size first
- * 3. create an array of fileEntries
- * 4. send the array with length of size, using send()
- */
 
 int pkt_peer_sendPkt(int connfd, ptp_peer_t* pkt){
 	
@@ -98,7 +99,8 @@ int pkt_peer_sendPkt(int connfd, ptp_peer_t* pkt){
 
 	if(pkt->filetablesize > 0){
 		int totalBytes = (pkt->filetablesize) * sizeof(fileEntry_t);
-		if(send(connfd, pkt->filetableHeadPtr, totalBytes, 0) < 0){
+		char* buf = filetable_convertFileEntriesToArray(pkt->filetableHeadPtr, pkt->filetablesize);
+		if(send(connfd, buf, totalBytes, 0) < 0){
 			printf("err in %s: send arraylist of entries failed\n", __func__);
 			return -1;
 		}
@@ -134,7 +136,8 @@ int pkt_tracker_sendPkt(int connfd, ptp_tracker_t* pkt){
 
 	if(pkt->filetablesize > 0){
 		int totalBytes = (pkt->filetablesize) * sizeof(fileEntry_t);
-		if(send(connfd, pkt->filetableHeadPtr, totalBytes, 0) < 0){
+		char* buf = filetable_convertFileEntriesToArray(pkt->filetableHeadPtr, pkt->filetablesize);
+		if(send(connfd, buf, totalBytes, 0) < 0){
 			printf("err in %s: send arraylist of entries failed\n", __func__);
 			return -1;
 		}
@@ -169,12 +172,15 @@ int pkt_peer_recvPkt(int connfd, ptp_tracker_t* pkt){
 
 
 	if(filetablesize > 0){
+		//total number of bytes needed for buffer
 		int totalBytes = filetablesize * sizeof(fileEntry_t);
-		head = (fileEntry_t*) malloc(totalBytes);
-		if(recv(connfd, head, totalBytes, 0) < 0) {
+
+		char* buf = (char*) malloc(totalBytes);
+		if(recv(connfd, buf, totalBytes, 0) < 0) {
 			printf("err in %s: failed to receive arraylist of entries\n", __func__);
 			return -1;
 		}
+		head = filetable_convertArrayToFileEntires(buf, filetablesize);
 	}
 
 	//assemble the pieces

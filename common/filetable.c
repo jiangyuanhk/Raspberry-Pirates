@@ -138,9 +138,12 @@ void filetable_printFileTable(fileTable_t* tablePtr){
 
 
 /**
- * use the old entry to update newEntry in the fietable
+ * [filetable_updateFile description]
+ * @param  tablePtr    [description]
+ * @param  oldEntryPtr [description]
+ * @param  newEntryPtr [description]
+ * @return             [description]
  */
-
 int filetable_updateFile(fileTable_t* tablePtr, fileEntry_t* oldEntryPtr, fileEntry_t* newEntryPtr){
 	
 	if(strcmp(oldEntryPtr->name, newEntryPtr->name)!= 0)
@@ -156,7 +159,10 @@ int filetable_updateFile(fileTable_t* tablePtr, fileEntry_t* oldEntryPtr, fileEn
 
 
 
-
+/**
+ * destroy the whole filetable
+ * @param tablePtr [table pointer]
+ */
 void filetable_destroy(fileTable_t *tablePtr){
 
 	if(tablePtr->size != 0){
@@ -177,30 +183,66 @@ void filetable_destroy(fileTable_t *tablePtr){
 
 
 
-
-fileEntry_t* filetable_convertEntiesToArray(fileTable_t* tablePtr){
-	
-	if(tablePtr->size == 0 ) return NULL;
-	
-	
-
-	pthread_mutex_lock(tablePtr->filetable_mutex);
+/**
+ * conver linkedlist of entries of in the table into continous chunk of array, for ease of sending
+ * need to pass tablePtr because we want the tablesize and head/tail information together
+ * @param  entry 	[head pointer of linked list of fileEntries in the table]
+ * @return          [array chunk]
+ */
+char* filetable_convertFileEntriesToArray(fileEntry_t* entry, int num){
 	
 	//initialize the array
-	int numOfEntries = tablePtr->size;
-	fileEntry_t* arrayHead = (fileEntry_t*)malloc(numOfEntries * sizeof(fileEntry_t));
+	char* buf = (char*) malloc(num * sizeof(fileEntry_t));
 
-	fileEntry_t* iter = tablePtr->head;
+	fileEntry_t* iter = entry;
 	int i = 0;
 	while(iter != NULL){
 		//each time, copy size of fileEntry_t from iter to the array indentified by arrayHead
-		memcpy(arrayHead + i * sizeof(fileEntry_t), iter, sizeof(fileEntry_t));
+		memcpy(buf + i * sizeof(fileEntry_t), iter, sizeof(fileEntry_t));
+		//go to next entry
 		iter = iter->pNext;
+		i++;
 	}
 
-	pthread_mutex_unlock(tablePtr->filetable_mutex);
-	return arrayHead;
+	return buf;
 }
+
+
+
+
+
+/**
+ * convert received buffer back to a list of fileEntries struct
+ * NULL if buffer is empty
+ * @param  buf [received buffer (containing linkedlist of entries)]
+ * @param  num [size of the table]
+ * @return     [filetable pointer]
+ */
+fileEntry_t* filetable_convertArrayToFileEntires(char* buf, int num){
+
+
+	//create a dummy head first
+	fileEntry_t* dummy = (fileEntry_t*) malloc(sizeof(fileEntry_t));
+	dummy->pNext = NULL;
+
+	//iterator points to dummy at first
+	fileEntry_t* iter = dummy;
+
+	//create entries one by one
+	int i;
+	for(i = 0; i < num; i++){
+		//create an entry
+		fileEntry_t* entry = (fileEntry_t*) malloc(sizeof(fileEntry_t));
+		memcpy(entry, buf + i * sizeof(fileEntry_t), sizeof(fileEntry_t));
+		entry->pNext = NULL;
+		iter->pNext = entry;
+		iter = entry->pNext;
+	}
+
+	return dummy->pNext;
+}
+
+
 
 
 

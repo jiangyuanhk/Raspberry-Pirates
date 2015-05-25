@@ -113,9 +113,45 @@ peerTable_t* myPeerTablePtr;
 
 
 
-
-
-
+/**
+ * handshake thread: to consistently receive messages from peers, respond if needed, by using tracker-peer handshake protocal defined in pkt.c
+ * @param  arg [the TCP connection identifier between a specific peer and the centralized trakcer ]
+ * @return     [void]
+ *
+ * sudo code:
+ *
+ * keep receiving message on the TCP conection
+ * 		case KEEPALIVE:
+ *   		find the peer entry in tracker's peerTable (must be exactly only one entry)
+ *   		update the peer's timestamp to current time
+ *
+ * 		case FILEUPDATE:
+ * 			for each file entry in packet's fileTable:
+ * 				search through tracker's fileTable
+ * 				if it is a new file: 
+ * 					add file to file table
+ * 				
+ * 				if the file exists in tracker's fileTable:
+ *
+ * 					if (peer has a newer version):
+ * 						update tracker's fileTable with this fileEntry
+ * 						
+ *
+ * 					else if (peer has an older version):
+ * 						do nothing
+ * 						
+ *
+ *
+ * 					else (same version)
+ * 						do thing
+ * 						
+ * 					
+ * 						
+ * 					
+ * 					
+ *
+ * 
+ */
  void *handshake_handler(void* arg){
  	
  	ptp_peer_t pkt_recv;
@@ -136,11 +172,12 @@ peerTable_t* myPeerTablePtr;
 				break;
 
 			case FILEUPDATE:
-				
+				// For each fileEntry, determine if it's new or not.
+				// if it is new
 
 				int numOfFiles = pkt_recv->filetablesize;
 				if(numOfFiles > 0){
-					
+
 				}
 
 
@@ -233,21 +270,7 @@ int create_server_socket(int portNum) {
 
 
 
-// *
-//  * create an entry in the tracker's peertable according to the REGISTER packet receieved from peer
-//  * @param pkt   [REGISTER packet from peer]
-//  * @param entry [created entry in the tracker-side peer table]
-//  * @param connfd [the conneciton between this trakcer and the peer from where the pkt is from]
 
-//  peertable create_peer_table_entry(ptp_peer_t pkt, int connfd, tracker_peer_t* entryPtr){
-//  	memset(entryPtr, 0, sizeof(tracker_peer_t));
-//  	memcpy(entryPtr->ip, pkt.peer_ip, IP_LEN);
-//  	entryPtr->time_stamp = getCurrentTime();
-
-//  	entryPtr->sockfd = connfd;
-//  	entryPtr->next = NULL;
-
-//  }
 
 
 /**
