@@ -64,3 +64,10 @@ void readConfigFile(char* filename);
 *frees global variables
 */
 void FileMonitor_freeAll();
+
+/*
+*Prints a FileInfo_table for testing
+*
+*@toPrint: the table to print
+*/
+void FileInfo_table_print(FileInfo_table* toPrint);

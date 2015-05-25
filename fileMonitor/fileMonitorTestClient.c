@@ -57,4 +57,6 @@ sleep(60);
 
 pthread_exit(&monitorthread);
 
+return 1;
+
 }
