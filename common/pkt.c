@@ -12,6 +12,11 @@
 #include <string.h>
 
 
+
+
+
+/************** SEND and RECV **********************************/
+
 int pkt_tracker_recvPkt(int connfd, ptp_peer_t* pkt){
 
 	int type, port, filetablesize;
@@ -61,12 +66,7 @@ int pkt_tracker_recvPkt(int connfd, ptp_peer_t* pkt){
 	pkt->filetablesize = filetablesize;
 	pkt->filetableHeadPtr = head;
 	return 1;
-
 }
-
-
-
-
 
 
 int pkt_peer_sendPkt(int connfd, ptp_peer_t* pkt){
@@ -107,11 +107,7 @@ int pkt_peer_sendPkt(int connfd, ptp_peer_t* pkt){
 	}
 
 	return 1;
-
 }
-
-
-
 
 int pkt_tracker_sendPkt(int connfd, ptp_tracker_t* pkt){
 
@@ -144,10 +140,7 @@ int pkt_tracker_sendPkt(int connfd, ptp_tracker_t* pkt){
 	}
 
 	return 1;
-
 }
-
-
 
 int pkt_peer_recvPkt(int connfd, ptp_tracker_t* pkt){
 
@@ -188,6 +181,40 @@ int pkt_peer_recvPkt(int connfd, ptp_tracker_t* pkt){
 	pkt->piece_len = piece_len;
 	pkt->filetablesize = filetablesize;
 	pkt->filetableHeadPtr = head;
+}
 
 
+/********** CREATE **********************************/
+
+ptp_tracker_t* pkt_create_trackerPkt(){
+	ptp_tracker_t* pkt = (ptp_tracker_t*)malloc(sizeof(ptp_tracker_t));
+	memset(pkt, 0, sizeof(ptp_tracker_t));
+	return pkt;
+
+}
+ptp_peer_t* pkt_create_peerPkt(){
+	ptp_peer_t* pkt = (ptp_peer_t*)malloc(sizeof(ptp_peer_t));
+	memset(pkt, 0, sizeof(ptp_peer_t));
+	return pkt;
+}
+
+
+/********* CONFIGURE ***********************************/
+
+void pkt_config_trackerPkt(ptp_tracker_t* pkt,  int heartbeatinterval, int piece_len, int filetablesize, fileEntry_t* filetableHeadPtr){
+	pkt->heartbeatinterval = heartbeatinterval;
+	pkt->piece_len = piece_len;
+	pkt->filetablesize = filetablesize;
+	pkt->filetableHeadPtr = filetableHeadPtr;
+}
+
+
+
+
+void pkt_config_peerPkt(ptp_peer_t* pkt,  int type, char* peer_ip, int port, int filetablesize, fileEntry_t* filetableHeadPtr){
+	pkt->type = type;
+	strcpy(pkt->peer_ip, peer_ip);
+	pkt->port = port;
+	pkt->filetablesize = filetablesize;
+	pkt->filetableHeadPtr = filetableHeadPtr;
 }

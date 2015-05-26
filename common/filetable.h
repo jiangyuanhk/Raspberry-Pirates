@@ -42,71 +42,30 @@ typedef struct fileTable{
 
 
 fileTable_t* filetable_init();
-   
 
+fileEntry_t* filetable_searchFileByName(fileEntry_t* head, char* filename);
 
-/**
- * search fileEntry in the fileTable by name, return NULL if cannot find
- * @param  filename [headPtr of the fileTable to be searched]
- * @return          [description]
- */
-fileEntry_t* filetable_searchFileByName(fileTable_t* tablePtr, char*  filename);
+int filetable_deleteFileEntryByName(fileTable_t* tablePtr, char* filename);
 
-
-/**
- * delete fileEntry in the fleTable by name, return 1 if success, -1 if not
- * @param  headPtr  [description]
- * @param  filename [description]
- * @return          [description]
- */
-int filetable_deleteFileEntryByName(fileTable* tablePtr, char* filename);
-
-
-/**
- * append the newEntry to the end of the fileTable
- * @param headPtr     [description]
- * @param newEntryPtr [description]
- */
 void filetable_appendFileEntry(fileTable_t* tablePtr, fileEntry_t* newEntryPtr);
 
-
-/**
- * print the fileTale along the way for ease of debugging and checking
- */
 void filetable_printFileTable(fileTable_t* tablePtr);
 
+int filetable_updateFile(fileEntry_t* oldEntryPtr, fileEntry_t* newEntryPtr, pthread_mutex_t* tablemutex);
+
+void filetable_destroy(fileTable_t *tablePtr);
 
 
-/**
- * update oldEntry in fileTable using newEntry
- * @param filetablePtr [description]
- * @param oldEntryPtr  [description]
- * @param newEntryPtr  [description]
- */
-void filetable_filetable_updateFile(fileTable_t* filetablePtr, fileEntry_t* oldEntryPtr, fileEntry_t* newEntryPtr);
+int filetable_AddIp2Iplist(fileEntry_t* entry, char* peerip, pthread_mutex_t* tablemutex);
 
-
+int filetable_deleteIpfromIplist(fileEntry_t* entry, char* peerip, pthread_mutex_t* tablemutex);
 
 
 
 
-
-void filetable_destroy(fileTable_t* tablePtr);
-
-
-
-
+char* filetable_convertFileEntriesToArray(fileEntry_t* entry, int num, pthread_mutex_t* tablemutex);
 
 fileEntry_t* filetable_convertArrayToFileEntires(char* buf, int num);
-
-
-
-char* filetable_convertFileEntriesToArray(fileEntry_t* entry, int num);
-
-
-
-
-
 
 
 

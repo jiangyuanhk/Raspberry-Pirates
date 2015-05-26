@@ -44,11 +44,11 @@ int utils_getIPfromHostName(char* hostname, char *ip) {
 
 
 
-
-unsigned long int getCurrentTime(){
-	//TODO
+unsigned long getCurrentTime(){
+	time_t curTime;
+    curTime = time((time_t *)0);
+    return (unsigned long) curTime;
 }
-
 
 
 

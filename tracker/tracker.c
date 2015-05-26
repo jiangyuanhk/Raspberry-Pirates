@@ -1,7 +1,5 @@
 
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -19,7 +17,6 @@
 #include <netinet/in.h>
 #include <sys/time.h>
 #include <assert.h>
-// #include "tracker.h"
 #include "../common/pkt.h"
 #include "../common/filetable.h"
 #include "../common/peertable.h"
@@ -32,84 +29,29 @@
 fileTable_t* myFileTablePtr;
 peerTable_t* myPeerTablePtr;
 
-
+int svr_sd; // trakcer side socket binded with HANDSHAKE_PORT
 
 /**
- * update file table on the tracker, based on the received FILEUPDATE packet from the peer
- * @param pktPtr [FILEUPDATE packet received from peer]
+ * construct a broadcast packet and send fileTable updates to all peers
  */
- void updateFileTable(ptp_peer_t* pktPtr){
-
- 	int peer_tableSize = pktPtr->file_table_size;
- 	int i;
-
-
- 	Node* iter = filetable_headPtr;
-
- 	while(iter != NULL){
-		//for every file in tracker, check if it is in peer's filetable
-		//if it is, then update accordingly
-		//if it is not, delete it from trakcer's filetable
-
-
- 		if(findFileEntryByName(filetable_headPtr, iter->name) == NULL){
- 			deleteFileEntryByName(filetable_headPtr, iter->)
- 		}
-
-
-
-
- 	}
-
-
-
-
- }
-
-
-
-
-
-
- void broadcastFileTable(){
- 	tracker_peer_t* peerIter = tracker_peertable_headPtr;
-
-
-	//create a pkt as a reponse to be broadcast to all peers
- 	ptp_tracker_t pkt_response;
- 	memset(&pkt_response, 0, sizeof(ptp_peer_t));
- 	pkt_response.interval = HEARTBEAT_INTERVAL;
- 	pkt_response.piece_len = PIECE_LENGTH;
- 	pkt_response.file_table_size = getFileTableSize();
-
-
-	//copy tracker side filetable to pkt_response
- 	pthread_mutex_lock(filetable_mutext);
- 	Node* temp = filetable_headPtr;
- 	int i = 0;
- 	while(temp != NULL) {
- 		memcpy(pkt_response.filetable[i], temp, sizeof(Node));
- 		i++;
- 		temp = (Node*)temp->pNext;
- 	}
- 	pthread_mutex_unlock(filetable_mutext);
+void broadcastFileTable(){
+ 	
+	//create a pkt to broadcast
+ 	ptp_tracker_t* broadcast = pkt_create_trackerPkt(); 
+ 	// config reponse
+ 	pkt_config_trackerPkt(broadcast, HEARTBEAT_INTERVAL, PIECE_LENGTH, myFileTablePtr->size, myFileTablePtr->head);
 
 
 	//send the pkt_response to all peers (braodcasting)
- 	while(peerItr != NULL){
- 		if(tracker_sendPkt(peerIter->sockfd, pkt_response) < 0){
-			//TODO: if failed then ...delete the entry
- 		} else {
- 			peerItr = peerItr->next;
- 		}
+	peerEntry_t* iter = myPeerTablePtr->head;
+ 	while(iter != NULL){
+ 		pkt_tracker_sendPkt(iter->sockfd, broadcast);
+ 		iter = iter->next;
  	}
-
- 	free(pkt_response);
+ 	//the actual linkedlist of Entries belongs to myFileTable, do not free
+ 	//only free broadcast
+ 	free(broadcast);
  }
-
-
-
-
 
 
 
@@ -129,30 +71,29 @@ peerTable_t* myPeerTablePtr;
  * 			for each file entry in packet's fileTable:
  * 				search through tracker's fileTable
  * 				if it is a new file: 
- * 					add file to file table
- * 				
- * 				if the file exists in tracker's fileTable:
- *
+ * 					add file to file table	
+ * 				elif the file exists in tracker's fileTable:
  * 					if (peer has a newer version):
- * 						update tracker's fileTable with this fileEntry
+ * 						update tracker's fileEntry by peer's fileEntry (update timestamp, size)
  * 						
  *
- * 					else if (peer has an older version):
- * 						do nothing
- * 						
+ * 					elif (peer has an older version):
+ * 						do nothing (becasue the new table would be eventaully broadcast later)
+ * 							
  *
  *
  * 					else (same version)
- * 						do thing
- * 						
- * 					
- * 						
- * 					
- * 					
+ * 						add peer to the fileEntry's iplist if possible
  *
+ * 			for each file entry in tracker's fileTable:
+ * 				search through packet's fileTable:
+ * 					if packet's fileTable does not have it: (search by name)
+ * 						delete the entry from tracker's fileTable
+ * 					elif packet's fileTable HAVE it: (search by name)
+ * 						do nothing, becasue it must be synced in the upper loops
  * 
  */
- void *handshake_handler(void* arg){
+void *handshake(void* arg){
  	
  	ptp_peer_t pkt_recv;
  	memset(&pkt_recv, 0, sizeof(ptp_peer_t));
@@ -162,51 +103,121 @@ peerTable_t* myPeerTablePtr;
 	while(1) {
 		pkt_tracker_recvPkt(connfd, &pkt_recv);
 
-		int type = pkt_recv->type;
+		int type = pkt_recv.type;
 		switch(type) {
 			case KEEPALIVE:
-
-				char* ip = pkt_recv->ip;
-				peerEntry_t* tobeRefreshed = peerTable_searchEntryByIp(myPeerTablePtr, ip);
+			{
+				peerEntry_t* tobeRefreshed = peertable_searchEntryByIp(myPeerTablePtr, pkt_recv.peer_ip);
 				peertable_refreshTimestamp(tobeRefreshed);
 				break;
-
+			}
 			case FILEUPDATE:
-				// For each fileEntry, determine if it's new or not.
-				// if it is new
+			{
+				int needBroadCast = -1; 
+				int i;
+				//for each file entry in packet's fileTable:
+				fileEntry_t* iter = pkt_recv.filetableHeadPtr;
+				while(iter != NULL){
+					//tracker's fileEntry found with same name(NULL if not found)
+					fileEntry_t* res = filetable_searchFileByName(myFileTablePtr->head, iter->name);
+					if(res == NULL){
+						//if it is a new file: 
+ 						//add file to file table	
+						filetable_appendFileEntry(myFileTablePtr, iter);
+						needBroadCast = 1;
 
-				int numOfFiles = pkt_recv->filetablesize;
-				if(numOfFiles > 0){
+					} else {
+						//the entry exists already
+						if(iter->timestamp > res->timestamp){
+							//if peer has a newer version
+							//update tracker's fileEntry by peer's fileEntry 
+							filetable_updateFile(res, iter, myFileTablePtr->filetable_mutex);
+							
+						} else if (iter->timestamp == res->timestamp){
 
+							// if peer and tracker has the same version of the file 
+							// add peerip to the fileEntry's iplist if possible
+							if(filetable_AddIp2Iplist(res, iter->iplist[0], myFileTablePtr->filetable_mutex) > 0){
+								needBroadCast = 1;
+							}
+							//only when case falls here, we do not need to broadcast, meaning every entry's every fileld are unchanged
+
+						} else {
+							// peer has an older version
+							// wait for later broadcast
+							needBroadCast = 1;
+
+						}
+
+
+					}
+
+					iter = iter->pNext;
+				}
+
+				//for each file entry in tracker's fileTable
+				iter = myFileTablePtr->head;
+				while(iter != NULL){
+					//search through packet's fileTable (by name)
+					fileEntry_t* res = filetable_searchFileByName(pkt_recv.filetableHeadPtr, iter->name);
+					if(res != NULL){
+						// if packet's fileTable does not have it
+						// delete the entry from tracker's fileTable
+						filetable_deleteFileEntryByName(myFileTablePtr, iter->name);
+						needBroadCast = 1;
+					}
+
+					iter = iter->pNext;
 				}
 
 
+				//at this time we finish sync fileTables between trakcer and server
+				//begin to broadcast trakcer's new fileTable
+				if(needBroadCast){
+					broadcastFileTable();
+				}
 
 				break;
 
-
+			}
 			case REGISTER:
 				printf("%s: error: aren't suppposed to receive REGISTER here\n", __func__);
 				break;
 		}
 	}
-
-
-
 }
 
 
 
 
 
-
+/**
+ * Periodically check if some peer is dead (DEAD_PEER_TIMEOUT)
+ * remove dead peer from peerTable, remove peerip from fileTable
+ */
 void* monitorAlive(void* arg){
 	while(1){
+		//check periodically to prevent CPU burning...
 		sleep(MINITOR_ALIVE_INTERVAL);
-		unsigned long curTime = getCurrentTime();
-		//compare current time with each file's last_time_stamp
-		//if the difference larger than timeout value, delete the corresponding entry
-		deleteDeadPeers(unsigned long curTime);//TODO
+		
+		//check the peerTable and remove all the dead peers 
+		if (myPeerTablePtr->size > 0) {
+			peerEntry_t* iter = myPeerTablePtr->head;
+
+			//obtain current Time
+			unsigned long currentTime = getCurrentTime();
+			while(iter != NULL){
+			//loop through peerTable
+			//check each peer if dead or alive
+				if(currentTime - iter->timestamp > DEAD_PEER_TIMEOUT){
+					//if dead, delete this peer from table
+					peerTable_deleteEntryByIp(iter->ip);
+					//if dead, also remove this peerip from any entry's iplist in the table
+					filetable_deleteIpfromAllEntries(myPeerTablePtr, iter->ip);
+				}
+			}
+		}
+
 	}
 }
 
@@ -242,34 +253,16 @@ int create_server_socket(int portNum) {
 }
 
 
-
-
-
-/**
- * create a packet to be sent back from tracker to peer (after trakcer receiving REGISTER)
- * contains info : tracker's fileTable, HEARTBEAT_INTERVAL and PIECE_LEN 
- * @param  table [description]
- * @return       [description]
- */
- ptp_tracker_t*  createPeerPkt(fileTable_t* table){
-		//create and clean 
- 	ptp_tracker_t* pkt = (ptp_tracker_t*) malloc(sizeof(ptp_tracker_t));
- 	memset(pkt, 0, sizeof(ptp_peer_t));
-
-		//config interval & piece_len
- 	pkt.interval = HEARTBEAT_INTERVAL;
- 	pkt.piece_len = PIECE_LENGTH;
-
-		//copy tracker side filetable to pkt
- 	pthread_mutex_lock(table->filetable_mutex);
- 	memcpy(&(pkt->filetable), table, sizeof(fileTable_t));
- 	pthread_mutex_unlock(table->filetable_mutex);
-
- 	return pkt;		
- }
-
-
-
+// Cleanup data structures and any other memory allocations
+// Register with SIGINT, so called when iterrupt the program
+// see main loop 
+void trackerStop() {
+    // Free peer table and filetable
+    peertable_destroy(myPeerTablePtr);
+    filetable_destroy(myFileTablePtr);
+    //close the socket binded with HANDSHAKE_PORT
+    close(svr_sd);
+}
 
 
 
@@ -277,7 +270,8 @@ int create_server_socket(int portNum) {
  * 1. initialize a peertable and a filetable
  * 2. create a socket binded with HANDSHAKE_PORT 
  * 3. create a MonitorAlive thread to periodically check the last alive timestamp of peers, remove those timeout peers
- * 4. keep listen to the socket binded with HANDSHAKE_PORT
+ * 4. register cleanup method when interrupt (SIGINT)
+ * 5. keep listen to the socket binded with HANDSHAKE_PORT
  * 			if receive RESIGSTER pkt:
  * 				1. create a new peerEntry using REGISTER's ip, REGISTER's sockfd, and currentTime;
  * 				2. insert the new peerEntry into table (assert: no peer has same ip as this new peer before insertion)
@@ -304,10 +298,14 @@ int create_server_socket(int portNum) {
  	pthread_create(&minitorAlive_thread, NULL, monitorAlive, NULL);
 
 
+ 	//4. register cleanup method when stop
+ 	signal(SIGINT, trackerStop);
+
+
 
 	ptp_peer_t pkt_recv;// the packet received on HANDSHAKE_PORT
 
-	//4. keeps listening on the socket binded with HANDSHAKE_PORT
+	//5. keeps listening on the socket binded with HANDSHAKE_PORT
 	while(1) {
 
 		//receive the REGISTER pkt if any
@@ -317,36 +315,43 @@ int create_server_socket(int portNum) {
 		assert(connfd >= 0);
 
 
-		tracker_recvPkt(connfd, &pkt_recv);
+		pkt_tracker_recvPkt(connfd, &pkt_recv);
 
 
 		if(pkt_recv.type == REGISTER) {
 
-			//create a new peerEntry using REGISTER's ip, REGISTER's sockfd, and currentTime;
-			peerEntry_t* peerEntry = peerTable_createEntry(pkt->peer_ip, connfd);
+			//create a new peerEntry using 1. REGISTER's ip, 2. connfd: denoting the TCP connection between this peer and tracker;
+			peerEntry_t* peerEntry = peertable_createEntry(pkt_recv.peer_ip, connfd);
 
 			// insert the new peerEntry into table (assert: no peer has same ip as this new peer before insertion)
-			assert(peerTable_existPeer(myPeerTablePtr, peerEntry) == -1);
-			peerTable_addEntry(myPeerTablePtr, peerEntry);
+			assert(peertable_existPeer(myPeerTablePtr, peerEntry) == -1);
+			peertable_addEntry(myPeerTablePtr, peerEntry);
 
 			//create a pkt to send back to peer, for peer to set up itself
-			pkt_tracker_t* reponse = createPeerPkt(myFileTablePtr);
+			//the pkt contains info: 1. HEATBEAT_INTERVAL 2. PIECE_LENGTH 3. trakcer's fileTable(including size and the linkedlist)
+			ptp_tracker_t* setup = pkt_create_trackerPkt();
+			pkt_config_trackerPkt(setup, HEARTBEAT_INTERVAL, PIECE_LENGTH, myFileTablePtr->size, myFileTablePtr->head);
 
-			//send the configured pkt back to peer
-			tracker_sendPkt(connfd, reponse);
+			//send the configured pkt --> peer
+			pkt_tracker_sendPkt(connfd, setup);
 			
 
  			//create a handshake thread to handle messages from this particular peer
 			//receive messages from this peer and respond if needed
 			//by using the peer-tracker handshake protocal
 			pthread_t handshake_thread;
-			pthread_create(&handshake_thread, NULL, handshake, &entry);
+			pthread_create(&handshake_thread, NULL, handshake, &connfd);
 			
 		}
 
 
 	}
 }
+
+
+
+
+
 
 
 
