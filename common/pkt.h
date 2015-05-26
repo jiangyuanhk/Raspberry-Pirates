@@ -22,7 +22,7 @@ typedef struct segment_tracker {
 
 	int filetablesize;
 
-	char* filetableHeadPtr;//array, by converting linkedlist of fileEntries
+	fileEntry_t* filetableHeadPtr;//array, by converting linkedlist of fileEntries
 
 } ptp_tracker_t;
 
@@ -39,7 +39,7 @@ typedef struct segment_peer {
 
 	int filetablesize;
 
-	char*  filetableHeadPtr;//array, by converting linkedlist of fileEntries
+	fileEntry_t*  filetableHeadPtr;//array, by converting linkedlist of fileEntries
 }ptp_peer_t;
 
 
