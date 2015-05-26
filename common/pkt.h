@@ -22,7 +22,7 @@ typedef struct segment_tracker {
 
 	int filetablesize;
 
-	fileEntry_t* filetableHeadPtr;//pointer to arrayList, not linkedlist
+	char* filetableHeadPtr;//array, by converting linkedlist of fileEntries
 
 } ptp_tracker_t;
 
@@ -39,7 +39,7 @@ typedef struct segment_peer {
 
 	int filetablesize;
 
-	fileEntry_t*  filetableHeadPtr;//pointer to array list, not linkedlist
+	char*  filetableHeadPtr;//array, by converting linkedlist of fileEntries
 }ptp_peer_t;
 
 
@@ -54,6 +54,16 @@ int pkt_tracker_sendPkt(int connection, ptp_tracker_t* pkt);
 int pkt_peer_recvPkt(int connection, ptp_tracker_t* pkt);
 int pkt_peer_sendPkt(int connection, ptp_peer_t* pkt);
 
+
+
+
+
+ptp_tracker_t* pkt_create_trackerPkt();
+ptp_peer_t* pkt_create_peerPkt();
+
+
+void pkt_config_trackerPkt(ptp_tracker_t* pkt,  int heartbeatinterval, int piece_len, int filetablesize, fileEntry_t* filetableHeadPtr);
+void pkt_config_peerPkt(ptp_peer_t* pkt,  int type, char* peer_ip, int port, int filetablesize, fileEntry_t* filetableHeadPtr);
 
 
 
