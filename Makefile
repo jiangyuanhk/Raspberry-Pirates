@@ -8,3 +8,4 @@ fileMonitor/fileMonitorTestClient: fileMonitor/fileMonitorTestClient.c fileMonit
 clean:
 	rm -rf fileMonitor/*.o
 	rm -rf client/app_simple_client
+
