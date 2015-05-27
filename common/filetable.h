@@ -1,4 +1,5 @@
-
+#ifndef FILETABLE_H
+#define FILETABLE_H
 
 #include "constants.h"
 #include <pthread.h>
@@ -66,5 +67,5 @@ char* filetable_convertFileEntriesToArray(fileEntry_t* entry, int num, pthread_m
 fileEntry_t* filetable_convertArrayToFileEntires(char* buf, int num);
 
 
-
+#endif
 

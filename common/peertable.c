@@ -17,6 +17,11 @@
 #include "../common/utils.h"
 
 
+/* Function to initialize a peer table.  The head and tail of the peer table will be set to 
+	NULL and the size is 0.
+
+	@return the pointer to the peerTable_t* that is created.
+*/
 peerTable_t* peertable_init(){
 	peerTable_t *peertable = (peerTable_t*) malloc(sizeof(peerTable_t));
 	peertable->head = NULL;
@@ -25,44 +30,59 @@ peerTable_t* peertable_init(){
 	return peertable;
 }
 
+
+/**
+ * Create a peertable entry from the given sockfd and ip.
+ * @param  head      [head of fileEntries in dest fileTable]
+ * @param  filename  [filename]
+ * @return           [pointer to entry if found, NULL if cannot find]
+ */
 peerEntry_t* peertable_createEntry(char* ip, int sockfd){
 	// Allocate memory for the entry.
-    peerEntry_t* peerEntry = (peerEntry_t*)malloc(sizeof(peerEntry_t));
+  peerEntry_t* peerEntry = (peerEntry_t*)malloc(sizeof(peerEntry_t));
 
-    // Set initial fields for the entry.
-    memcpy(peerEntry->ip, ip, IP_LEN);
-    peerEntry->sockfd = sockfd;
-    peerEntry->timestamp = getCurrentTime();
-    peerEntry->next = NULL;
+  // Set initial fields for the entry.
+  memcpy(peerEntry->ip, ip, IP_LEN);
+  peerEntry->sockfd = sockfd;
+  peerEntry->timestamp = getCurrentTime();
+  peerEntry->next = NULL;
 
-  	return peerEntry;
+	return peerEntry;
 }
 
-
-
-
+/**
+ * Adds a new peer entry to the end of the peer Table.
+ * @param  table  [pointer to the peer Table]
+ * @param  entry  [pointer to the peer entry to add]
+ */
 int peertable_addEntry(peerTable_t *table, peerEntry_t* entry) {
 
-    // when table is empty.
-    if (table->size == 0) {
-    	table->head = entry;
-    	table->tail = entry;
-    	table->size = table->size + 1;
-        return 1;
-    }
+  // when table is empty, add the entry and make it the head and tail
+  if (table -> size == 0) {
+  	table -> head = entry;
+  	table -> tail = entry;
+  }
 
+  // otherwise, append the new entry after the tail and make it the new tail
+  else {
+    table -> tail -> next = entry;
+    table -> tail = entry;
+  }
 
-    // when not empty, append to last
-    table->tail->next = entry;
-    table->tail = table->tail->next;
-
-   	return 1;
+  table -> size = table -> size + 1;
+ 	return 1;
 }
 
 
 
-// This method removes a table entry given the IP of the node to delete. Also fixes next pointers.
-// Returns 1 on success, -1 on failure.
+
+/**
+ * Removes a table entry given the IP addressof the node to delete.
+ * Also, updates the necessary pointers upon deletion.
+ * @param  table  [pointer to the peer Table]
+ * @param  ip     [pointer to ip address to delete]
+ * @return [returns 1 on success, -1 on failure]
+ */
 int peertable_deleteEntryByIp(peerTable_t *table, char* ip) {
 
 

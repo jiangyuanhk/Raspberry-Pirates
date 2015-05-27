@@ -1,6 +1,9 @@
+/* File: filetable.c
+   Description: Describes functions associated with creating and manipulating the filetable
+   		used by both the peer and tracker.  Unit tested in the testing directory with 
+   		filetable_test.c
+*/
 
-
-#include "filetable.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -16,13 +19,17 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/time.h>
-#include "peertable.h"
 #include <time.h>
 #include <assert.h>
 
+#include "filetable.h"
+#include "peertable.h"
 
+/* Function to initialize a file table.  The head and tail of the filetable will be set to 
+	NULL and the size is 0.  A mutex lock is malloced for the filetable.
 
-
+	@return the pointer to the fileTable_t that is created.
+*/
 fileTable_t* filetable_init() {
 
 	fileTable_t* tablePtr = (fileTable_t*) malloc(sizeof(fileTable_t));
@@ -36,7 +43,6 @@ fileTable_t* filetable_init() {
 	tablePtr->filetable_mutex = mutex;
 
 	return tablePtr;
-
 }
 
 
@@ -63,63 +69,115 @@ fileEntry_t* filetable_searchFileByName(fileEntry_t* head, char* filename){
 
 
 
-
+/**
+ * Check table for file and delete if the file is present.
+ * @param  tablePtr  [pointer to the fileTable]
+ * @param  filename  [filename]
+ * @return           [1 if successfully deleted, -1 if could not be deleted]
+ */
 int filetable_deleteFileEntryByName(fileTable_t* tablePtr, char* filename){
 
 	assert(tablePtr != NULL);
 	assert(filename != NULL);
 
+	if(tablePtr -> size == 0) return -1; //table is zero-size
 
-	if(tablePtr->size == 0) return -1; //table is zero-size
 	pthread_mutex_lock(tablePtr->filetable_mutex);
-
-	fileEntry_t* dummy = (fileEntry_t*) malloc(sizeof(fileEntry_t));
-	dummy->pNext = tablePtr->head;
-
-	fileEntry_t* iter = dummy; // dummy head
-	while(iter->pNext){
-		if(strcmp(iter->pNext->name, filename) == 0){
-			//found, delete iter->pNext
-			fileEntry_t* temp = iter->pNext;  // to be deleted
-			iter->pNext = iter->pNext->pNext;
-			tablePtr->size -= 1;
-			free(temp);
-			free(dummy);
-			pthread_mutex_unlock(tablePtr->filetable_mutex);
-			return 1;
+	fileEntry_t* file = tablePtr -> head;
+	
+	//check if table head needs to be replaced
+	if(strcmp(file -> name, filename) == 0) {
+		
+		//if the head is the only file, updated the head and tail pointers to be NULL
+		if (tablePtr -> size == 1) {
+			tablePtr -> head = NULL;
+			tablePtr -> tail = NULL;
 		}
 
-		iter = iter->pNext;
+		//otherwise update the head to be the file after the head
+		else {
+			tablePtr -> head = tablePtr -> head -> pNext;
+		}
+
+    tablePtr -> size -= 1;
+		
+    free(file);
+    pthread_mutex_unlock(tablePtr->filetable_mutex);
+
+		return 1;
 	}
-	free(dummy);
-	pthread_mutex_unlock(tablePtr->filetable_mutex);
-	return -1; // cannot find the file in the table
 
+  //otherwise, the file is either in the list and not the head or is not in the list
+  else {
+    fileEntry_t* prev_file = file;
+    file = file -> pNext;
 
+    //looping until reach the end of the list or find the file
+    while(file != NULL){
+
+      //if find the file in the list, remove it and update pointers
+      if (strcmp(file -> name, filename) == 0) {
+        prev_file -> pNext = file ->pNext;
+
+        //if the file is the tail, update the tail to be the previous file in the list
+        if (file == tablePtr -> tail) {
+          tablePtr -> tail = prev_file;
+        }
+
+        tablePtr -> size -= 1;
+
+        free(file);
+        pthread_mutex_unlock(tablePtr->filetable_mutex);
+
+        return 1;
+      }
+
+      //move the pointers to the next pair of files.
+      prev_file = file;
+      file = file -> pNext;
+    }
+
+    //if reach here, then the file is not found and return -1
+    pthread_mutex_unlock(tablePtr->filetable_mutex);
+    return -1;
+
+  }
 }
 
 
-
+/**
+ * Adds a new file entry to the end of the fileEntryTable.
+ * @param  tablePtr     [pointer to the fileTable]
+ * @param  newEntryPtr  [pointer to the file entry to add]
+ */
 void filetable_appendFileEntry(fileTable_t* tablePtr, fileEntry_t* newEntryPtr){
 	assert(tablePtr != NULL && newEntryPtr != NULL);
 
-	pthread_mutex_lock(tablePtr->filetable_mutex);
-	if(tablePtr->size == 0){
-		tablePtr->head = tablePtr->tail = newEntryPtr;
-	} else {
-		tablePtr->tail = newEntryPtr;
-		tablePtr->tail = tablePtr->tail->pNext;
+	pthread_mutex_lock(tablePtr -> filetable_mutex);
+
+  //if the table is empty, set the new file entry to be the head and tail
+  if (tablePtr -> size == 0) {
+		tablePtr -> head = newEntryPtr;
+    tablePtr -> tail = newEntryPtr;
+	} 
+
+  //otherwise, append the new file entry to the end of the list and make the new file the tail
+  else {
+		tablePtr -> tail -> pNext = newEntryPtr;
+		tablePtr -> tail = newEntryPtr;
 	}
 
-	tablePtr->size ++;
+	tablePtr -> size ++;
+
 	pthread_mutex_unlock(tablePtr->filetable_mutex);
 	return;
-
 }
 
-
-
-void filetable_printFileTable(fileTable_t* tablePtr){
+/**
+ * Prints out a file table
+ * @param  tablePtr     [pointer to the fileTable]
+ */
+void filetable_printFileTable(fileTable_t* tablePtr) {
 	fileEntry_t* iter = tablePtr->head;
 	printf("FILETABLE: \n");
 	printf("==========================\n");
@@ -145,17 +203,21 @@ void filetable_printFileTable(fileTable_t* tablePtr){
 
 
 /**
- * update oldEntry's timestamp, size using newEntry's infromation
+ * Update oldEntry's timestamp and size by replacing these values with those
+ * of the newEntry. Only do so if the two entries have the same name.
  * make sure two entries have the same name
- * @param  tablePtr    [description]
- * @param  oldEntryPtr [description]
- * @param  newEntryPtr [description]
- * @return             [description]
+ * @param  oldEntryPtr [the old file entry whose values will be updated (replaced)]
+ * @param  newEntryPtr [the new file entry whose values will be used to update the old file entry]
+ * @param  tablemutex  [the mutex lock to lock the file table while updating the filetable]
+ * @return             [returns 1 if the filetable was successfully, -1 otherwise]
  */
-int filetable_updateFile(fileEntry_t* oldEntryPtr, fileEntry_t* newEntryPtr, pthread_mutex_t* tablemutex){
+int filetable_updateFile(fileEntry_t* oldEntryPtr, fileEntry_t* newEntryPtr, pthread_mutex_t* tablemutex) {
 	
+  //if the file names do not match, do not update the files and return -1
 	if(strcmp(oldEntryPtr->name, newEntryPtr->name)!= 0)
 		return -1;
+
+  //otherwise, update the old entry to reflect the values of the new entry
 	pthread_mutex_lock(tablemutex);
 	memcpy(&(oldEntryPtr->size), &(newEntryPtr->size), sizeof(int));
 	memcpy(&(oldEntryPtr->timestamp), &(newEntryPtr->timestamp), sizeof(unsigned long int));
@@ -176,7 +238,6 @@ int filetable_updateFile(fileEntry_t* oldEntryPtr, fileEntry_t* newEntryPtr, pth
  */
 int filetable_AddIp2Iplist(fileEntry_t* entry, char* peerip, pthread_mutex_t* tablemutex){
 	
-
 	pthread_mutex_lock(tablemutex);
 	int i = 0;
 	for(; i < entry->peerNum; i++){
