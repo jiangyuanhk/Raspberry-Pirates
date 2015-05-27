@@ -61,8 +61,6 @@ int filetable_AddIp2Iplist(fileEntry_t* entry, char* peerip, pthread_mutex_t* ta
 int filetable_deleteIpfromIplist(fileEntry_t* entry, char* peerip, pthread_mutex_t* tablemutex);
 
 
-
-
 char* filetable_convertFileEntriesToArray(fileEntry_t* entry, int num, pthread_mutex_t* tablemutex);
 
 fileEntry_t* filetable_convertArrayToFileEntires(char* buf, int num);

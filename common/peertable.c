@@ -163,7 +163,6 @@ peerEntry_t* peertable_searchEntryByIp(peerTable_t* table, char* ip){
 }
 
 
-
 /**
  * refresh the peerEntry's timestamp to latest time
  * @param  entry [description]
