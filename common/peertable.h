@@ -36,12 +36,15 @@ typedef struct peer_peertable{
 
 
 // This initializes the peer table.
-peerTable_t* peerTable_init();
+peerTable_t* peertable_init();
 
 // This method creates a table entry and adds it to the end of the table.
 // Note that sockfd is initially -1 and should be -1 whenever disconnected.
-int peerTable_addEntry(peerTable_t *table, peerEntry_t* entry);
 peerEntry_t* peertable_createEntry(char* ip, int sockfd);
+
+int peertable_addEntry(peerTable_t *table, peerEntry_t* entry);
+
+
 
 
 // This method removes a table entry given the IP of the node to delete. Also fixes next pointers.
@@ -55,10 +58,16 @@ void peertable_destroy(peerTable_t *table);
 
 
 
+int peertable_existPeer(peerTable_t *table, peerEntry_t* entry);
 
 
 
 
+peerEntry_t* peertable_searchEntryByIp(peerTable_t* table, char* ip);
+
+
+
+int peertable_refreshTimestamp(peerEntry_t* entry);
 
 
 

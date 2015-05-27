@@ -17,7 +17,7 @@
 #include "../common/utils.h"
 
 
-peerTable_t* peerTable_init(){
+peerTable_t* peertable_init(){
 	peerTable_t *peertable = (peerTable_t*) malloc(sizeof(peerTable_t));
 	peertable->head = NULL;
 	peertable->tail = NULL;
@@ -25,7 +25,7 @@ peerTable_t* peerTable_init(){
 	return peertable;
 }
 
-peerEntry_t* peerTable_createEntry(char* ip, int sockfd){
+peerEntry_t* peertable_createEntry(char* ip, int sockfd){
 	// Allocate memory for the entry.
     peerEntry_t* peerEntry = (peerEntry_t*)malloc(sizeof(peerEntry_t));
 
@@ -41,7 +41,7 @@ peerEntry_t* peerTable_createEntry(char* ip, int sockfd){
 
 
 
-int peerTable_addEntry(peerTable_t *table, peerEntry_t* entry) {
+int peertable_addEntry(peerTable_t *table, peerEntry_t* entry) {
 
     // when table is empty.
     if (table->size == 0) {
@@ -63,7 +63,7 @@ int peerTable_addEntry(peerTable_t *table, peerEntry_t* entry) {
 
 // This method removes a table entry given the IP of the node to delete. Also fixes next pointers.
 // Returns 1 on success, -1 on failure.
-int peerTable_deleteEntryByIp(peerTable_t *table, char* ip) {
+int peertable_deleteEntryByIp(peerTable_t *table, char* ip) {
 
 
 	if(table->size == 0) return -1; //empty table
@@ -96,7 +96,9 @@ int peerTable_deleteEntryByIp(peerTable_t *table, char* ip) {
 
 
 
-void peerTable_destroy(peerTable_t *table) {
+void peertable_destroy(peerTable_t *table) {
+	
+	//free entry if any
 	if(table->size != 0){
 		pthread_mutex_lock(table->peertable_mutex);
 		peerEntry_t* iter = table->head;
@@ -107,25 +109,32 @@ void peerTable_destroy(peerTable_t *table) {
 		}
 		pthread_mutex_unlock(table->peertable_mutex);
 	}
-
+	//free table mutex
 	free(table->peertable_mutex);
 	return;
 }
 
 
+
+
+
 // check if the table has a peer with the same IP as the peer
-int peerTable_existPeer(peerTable_t *table, peerEntry_t* entry){
+int peertable_existPeer(peerTable_t *table, peerEntry_t* entry){
+
 	if(table->size == 0) return -1;
+	pthread_mutex_lock(table->peertable_mutex);
 	peerEntry_t* iter = table->head;
 	while(iter != NULL){
 		if(strcmp(entry->ip, iter->ip) == 0){
+			pthread_mutex_unlock(table->peertable_mutex);
 			return 1;
 		}
 		iter = iter->next;
 	}
-
+	pthread_mutex_unlock(table->peertable_mutex);
 	return -1;
 }
+
 
 
 
@@ -134,9 +143,25 @@ int peerTable_existPeer(peerTable_t *table, peerEntry_t* entry){
  * return it if found, return NULL if not
  */
 
-peerEntry_t* peerTable_searchEntryByIp(peerTable_t* table, char* ip){
-	//TODO:
+peerEntry_t* peertable_searchEntryByIp(peerTable_t* table, char* ip){
+	
+	if(table->size == 0) return NULL;
+	pthread_mutex_lock(table->peertable_mutex);
+	peerEntry_t* iter = table->head;
+	while(iter != NULL){
+		if(strcmp(iter->ip, ip) == 0) {
+			pthread_mutex_unlock(table->peertable_mutex);
+			return iter;
+		}
+		iter = iter->next;
+	}
+
+	pthread_mutex_unlock(table->peertable_mutex);
+	return iter;
+
+	
 }
+
 
 
 /**
@@ -144,8 +169,13 @@ peerEntry_t* peerTable_searchEntryByIp(peerTable_t* table, char* ip){
  * @param  entry [description]
  * @return       [description]
  */
-int peerTable_refreshTimeStamp(peerEntry_t* entry){
-	//TODO:
+int peertable_refreshTimestamp(peerEntry_t* entry){
+		
+	unsigned long curTime = getCurrentTime();
+	if(entry->timestamp < curTime) return -1;
+	
+	entry->timestamp = curTime;
+	return 1;
 }
 
 

@@ -1,0 +1,2448 @@
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <errno.h>
+#include <time.h>
+#include <pthread.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/time.h>
+#include <assert.h>
+
+// #include "tracker.h"
+#include "../common/constants.h"
+#include "../common/pkt.h"
+#include "../peer/peer_helpers.h"
+// #include "../common/constants.h"
+
+
+int svr_sd;
+
+/**
+ * update file table on the tracker, based on the received FILEUPDATE packet from the peer
+ * @param pktPtr [FILEUPDATE packet received from peer]
+ */
+// void updateFileTable(ptp_peer_t* pktPtr){
+//  Node* iter = filetable_headPtr;
+
+
+//  if(iter == NULL){
+
+//    int i;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+
+//      //get the i-th entry int the peer-side file table
+//      Node newEntry;
+//      memset(&newEntry, 0, sizeof(Node));
+//      newEntry.size = pktPtr->file_table[i].size;
+//      memcpy(newEntry.name, pktPtr->file_table[i].name, FILE_NAME_MAX_LEN);
+//      newEntry.pNext = NULL;
+//      memset(newEntry.newpeerip, 0, IP_LEN * MAX_PEER_NUM); //memset to 0
+//      memcpy(newEntry.newpeerip, pktPtr->file_table[i].newpeerip, IP_LEN);//TODO: not sure how to update
+//      //append it to the file
+//      appendFileEntry(newEntry);
+//      i++;
+//    }
+
+//    return;
+
+//  } else {
+//    int i;
+//    char* peerip = pktPtr->newpeerip;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+//      char* name = pktPtr->file_table[i].name;
+
+
+//    }
+//  }
+
+// }
+
+
+
+
+
+
+
+
+
+
+// void broadcastFileTable(){
+//  tracker_peer_t* peerIter = tracker_peertable_headPtr;
+  
+
+//  //create a pkt as a reponse to be broadcast to all peers
+//  ptp_tracker_t pkt_response;
+//  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+//  pkt_response.interval = HEARTBEAT_INTERVAL;
+//  pkt_response.piece_len = PIECE_LENGTH;
+//  pkt_response.file_table_size = getFileTableSize();
+
+
+//  //copy tracker side filetable to pkt_response
+//  pthread_mutex_lock(filetable_mutext);
+//  Node* temp = filetable_headPtr;
+//  int i = 0;
+//  while(temp != NULL) {
+//    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+//    i++;
+//    temp = (Node*)temp->pNext;
+//  }
+//  pthread_mutex_unlock(filetable_mutext);
+
+
+//  //send the pkt_response to all peers (braodcasting)
+//  while(peerItr != NULL){
+//    if(tracker_sendPkt(peerIter->sockfd, pkt_response) < 0){
+//      //TODO: if failed then ...delete the entry
+//    } else {
+//      peerItr = peerItr->next;
+//    }
+//  }
+
+//  free(pkt_response);
+// }
+
+
+
+
+// void* monitorAlive(void* arg){
+//  while(1){
+//    sleep(MINITOR_ALIVE_INTERVAL);
+//    unsigned long curTime = getCurrentTime();
+//    //compare current time with each file's last_time_stamp
+//    //if the difference larger than timeout value, delete the corresponding entry
+//    // deleteDeadPeers(unsigned long curTime);//TODO
+//  }
+// }
+
+
+//create a particular server socket using given port number
+int create_server_socket(int portNum) {
+  printf("%s called \n", __func__);
+
+  int tcpserv_sd;
+  struct sockaddr_in tcpserv_addr;
+
+  //create a server socket, and configure its port
+  tcpserv_sd = socket(AF_INET, SOCK_STREAM, 0); 
+  if(tcpserv_sd<0) 
+    return -1;
+  memset(&tcpserv_addr, 0, sizeof(tcpserv_addr));
+  tcpserv_addr.sin_family = AF_INET;
+  tcpserv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  tcpserv_addr.sin_port = htons(portNum);
+
+
+  if(bind(tcpserv_sd, (struct sockaddr *)&tcpserv_addr, sizeof(tcpserv_addr))< 0)
+    return -1; 
+  if(listen(tcpserv_sd, 1) < 0) 
+    return -1;
+
+  printf("%s finished successfully\n", __func__);
+  return tcpserv_sd;
+}
+
+
+
+// *
+//  * create an entry in the tracker side peer table according to the REGISTER packet receieved from peer
+//  * @param pkt   [REGISTER packet from peer]
+//  * @param entry [created entry in the tracker-side peer table]
+//  * @param connfd [the conneciton between this trakcer and the peer from where the pkt is from]
+ 
+//  void create_peer_table_entry(ptp_peer_t pkt, int connfd, tracker_peer_t* entryPtr){
+//    memset(entryPtr, 0, sizeof(tracker_peer_t));
+//    memcpy(entryPtr->ip, pkt.peer_ip, IP_LEN);
+//    entryPtr->last_time_stamp = getCurrentTime();
+
+//    entryPtr->sockfd = connfd;
+//    entryPtr->next = NULL;
+
+//  }
+
+
+
+
+
+int main() {
+
+  //create a socket on HANDSHAKE_PORT
+  svr_sd = create_server_socket(TRACKER_PEER_PORT);
+  assert(svr_sd >= 0);
+
+  //start a thread to minitor & accept alive message from online peers periodically
+  //remove dead peers if timeout occurs
+  // pthread_t minitorAlive_thread;
+  // pthread_create(&minitorAlive_thread, NULL, monitorAlive, NULL);
+
+
+  //keeps listening on the socket binded with HANDSHAKE_PORT
+  while(1) {
+
+    //receive the REGISTER pkt if any
+    struct sockaddr_in client_addr;
+    socklen_t length = sizeof(client_addr);
+    int connfd = accept(svr_sd, (struct sockaddr*) &client_addr, &length);
+    assert(connfd >= 0);
+      printf("Connected!\n");
+
+    //Test receiving packet from peer
+    ptp_peer_t* packet = calloc(1, sizeof(ptp_peer_t));
+    recv_pkt_from_peer(packet, connfd);
+
+    printf("Recvining packet from peer\n");
+    printf("protocal len: %d\n", packet -> protocol_len);
+    printf("type: %d\n", packet -> type);
+    printf("peer_ip: %s\n", packet -> peer_ip);
+    printf("port: %d\n", packet -> port);
+    printf("file_table_size: %d\n", packet -> file_table_size);
+
+    free(packet);
+
+    //Test sending packet to peer
+    ptp_tracker_t* pkt = calloc(1, sizeof(ptp_tracker_t));
+    pkt -> interval = 1929;
+    pkt -> piece_len = 1234;
+    pkt -> file_table_size = 212;
+
+  if (send_pkt_tracker_to_peer(pkt, connfd) < 0){
+    printf("Error sending the register packet\n");
+  }
+  free(packet);
+
+
+  printf("testing receiving a file\n");
+  file_metadata_t* metadata = calloc(1, sizeof(file_metadata_t));
+  int ret1 = receive_meta_data_info(connfd, metadata);
+  printf("Recevied the meta data\n");
+  int ret2 = receive_data_p2p(connfd, metadata);
+  printf("Ret1: %d    Ret2: %d \n", ret1, ret2);
+  free(metadata);
+  }
+}
+    // tracker_recvPkt(connfd, &pkt_recv);
+
+
+    // if(pkt_recv.type == REGISTER) {
+
+    //  tracker_peer_t entry;
+    //  create_peer_table_entry(pkt_recv, connfd, &entry);
+    //  update_peer_table(&entry);
+
+    //  //create a pkt to send back to peer, for peer to set up itself
+    //  ptp_tracker_t pkt_response;
+    //  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+    //  pkt_response.interval = HEARTBEAT_INTERVAL;
+    //  pkt_response.piece_len = PIECE_LENGTH;
+    //  pkt_response.file_table_size = getFileTableSize();
+
+
+    //  //copy tracker side filetable to pkt_response
+    //  pthread_mutex_lock(filetable_mutext);
+    //  Node* temp = filetable_headPtr;
+    //  int i = 0;
+    //  while(temp != NULL) {
+    //    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+    //    i++;
+    //    temp = (Node*)temp->pNext;
+    //  }
+    //  pthread_mutex_unlock(filetable_mutext);
+
+
+    //  //send the configured pkt back to peer
+    //  tracker_sendPkt(connfd, pkt_response);
+      
+    //  //receive messages from this peer and respond if needed
+    //  //by using the peer-tracker handshake protocal
+    //  pthread_t handshake_thread;
+    //  pthread_create(&handshake_thread, NULL, handshake, &entry);
+      
+    // }
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <errno.h>
+#include <time.h>
+#include <pthread.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/time.h>
+#include <assert.h>
+
+// #include "tracker.h"
+#include "../common/constants.h"
+#include "../common/pkt.h"
+#include "../peer/peer_helpers.h"
+// #include "../common/constants.h"
+
+
+int svr_sd;
+
+/**
+ * update file table on the tracker, based on the received FILEUPDATE packet from the peer
+ * @param pktPtr [FILEUPDATE packet received from peer]
+ */
+// void updateFileTable(ptp_peer_t* pktPtr){
+//  Node* iter = filetable_headPtr;
+
+
+//  if(iter == NULL){
+
+//    int i;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+
+//      //get the i-th entry int the peer-side file table
+//      Node newEntry;
+//      memset(&newEntry, 0, sizeof(Node));
+//      newEntry.size = pktPtr->file_table[i].size;
+//      memcpy(newEntry.name, pktPtr->file_table[i].name, FILE_NAME_MAX_LEN);
+//      newEntry.pNext = NULL;
+//      memset(newEntry.newpeerip, 0, IP_LEN * MAX_PEER_NUM); //memset to 0
+//      memcpy(newEntry.newpeerip, pktPtr->file_table[i].newpeerip, IP_LEN);//TODO: not sure how to update
+//      //append it to the file
+//      appendFileEntry(newEntry);
+//      i++;
+//    }
+
+//    return;
+
+//  } else {
+//    int i;
+//    char* peerip = pktPtr->newpeerip;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+//      char* name = pktPtr->file_table[i].name;
+
+
+//    }
+//  }
+
+// }
+
+
+
+
+
+
+
+
+
+
+// void broadcastFileTable(){
+//  tracker_peer_t* peerIter = tracker_peertable_headPtr;
+  
+
+//  //create a pkt as a reponse to be broadcast to all peers
+//  ptp_tracker_t pkt_response;
+//  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+//  pkt_response.interval = HEARTBEAT_INTERVAL;
+//  pkt_response.piece_len = PIECE_LENGTH;
+//  pkt_response.file_table_size = getFileTableSize();
+
+
+//  //copy tracker side filetable to pkt_response
+//  pthread_mutex_lock(filetable_mutext);
+//  Node* temp = filetable_headPtr;
+//  int i = 0;
+//  while(temp != NULL) {
+//    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+//    i++;
+//    temp = (Node*)temp->pNext;
+//  }
+//  pthread_mutex_unlock(filetable_mutext);
+
+
+//  //send the pkt_response to all peers (braodcasting)
+//  while(peerItr != NULL){
+//    if(tracker_sendPkt(peerIter->sockfd, pkt_response) < 0){
+//      //TODO: if failed then ...delete the entry
+//    } else {
+//      peerItr = peerItr->next;
+//    }
+//  }
+
+//  free(pkt_response);
+// }
+
+
+
+
+// void* monitorAlive(void* arg){
+//  while(1){
+//    sleep(MINITOR_ALIVE_INTERVAL);
+//    unsigned long curTime = getCurrentTime();
+//    //compare current time with each file's last_time_stamp
+//    //if the difference larger than timeout value, delete the corresponding entry
+//    // deleteDeadPeers(unsigned long curTime);//TODO
+//  }
+// }
+
+
+//create a particular server socket using given port number
+int create_server_socket(int portNum) {
+  printf("%s called \n", __func__);
+
+  int tcpserv_sd;
+  struct sockaddr_in tcpserv_addr;
+
+  //create a server socket, and configure its port
+  tcpserv_sd = socket(AF_INET, SOCK_STREAM, 0); 
+  if(tcpserv_sd<0) 
+    return -1;
+  memset(&tcpserv_addr, 0, sizeof(tcpserv_addr));
+  tcpserv_addr.sin_family = AF_INET;
+  tcpserv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  tcpserv_addr.sin_port = htons(portNum);
+
+
+  if(bind(tcpserv_sd, (struct sockaddr *)&tcpserv_addr, sizeof(tcpserv_addr))< 0)
+    return -1; 
+  if(listen(tcpserv_sd, 1) < 0) 
+    return -1;
+
+  printf("%s finished successfully\n", __func__);
+  return tcpserv_sd;
+}
+
+
+
+// *
+//  * create an entry in the tracker side peer table according to the REGISTER packet receieved from peer
+//  * @param pkt   [REGISTER packet from peer]
+//  * @param entry [created entry in the tracker-side peer table]
+//  * @param connfd [the conneciton between this trakcer and the peer from where the pkt is from]
+ 
+//  void create_peer_table_entry(ptp_peer_t pkt, int connfd, tracker_peer_t* entryPtr){
+//    memset(entryPtr, 0, sizeof(tracker_peer_t));
+//    memcpy(entryPtr->ip, pkt.peer_ip, IP_LEN);
+//    entryPtr->last_time_stamp = getCurrentTime();
+
+//    entryPtr->sockfd = connfd;
+//    entryPtr->next = NULL;
+
+//  }
+
+
+
+
+
+int main() {
+
+  //create a socket on HANDSHAKE_PORT
+  svr_sd = create_server_socket(TRACKER_PEER_PORT);
+  assert(svr_sd >= 0);
+
+  //start a thread to minitor & accept alive message from online peers periodically
+  //remove dead peers if timeout occurs
+  // pthread_t minitorAlive_thread;
+  // pthread_create(&minitorAlive_thread, NULL, monitorAlive, NULL);
+
+
+  //keeps listening on the socket binded with HANDSHAKE_PORT
+  while(1) {
+
+    //receive the REGISTER pkt if any
+    struct sockaddr_in client_addr;
+    socklen_t length = sizeof(client_addr);
+    int connfd = accept(svr_sd, (struct sockaddr*) &client_addr, &length);
+    assert(connfd >= 0);
+      printf("Connected!\n");
+
+    //Test receiving packet from peer
+    ptp_peer_t* packet = calloc(1, sizeof(ptp_peer_t));
+    recv_pkt_from_peer(packet, connfd);
+
+    printf("Recvining packet from peer\n");
+    printf("protocal len: %d\n", packet -> protocol_len);
+    printf("type: %d\n", packet -> type);
+    printf("peer_ip: %s\n", packet -> peer_ip);
+    printf("port: %d\n", packet -> port);
+    printf("file_table_size: %d\n", packet -> file_table_size);
+
+    free(packet);
+
+    //Test sending packet to peer
+    ptp_tracker_t* pkt = calloc(1, sizeof(ptp_tracker_t));
+    pkt -> interval = 1929;
+    pkt -> piece_len = 1234;
+    pkt -> file_table_size = 212;
+
+  if (send_pkt_tracker_to_peer(pkt, connfd) < 0){
+    printf("Error sending the register packet\n");
+  }
+  free(packet);
+
+
+  printf("testing receiving a file\n");
+  file_metadata_t* metadata = calloc(1, sizeof(file_metadata_t));
+  int ret1 = receive_meta_data_info(connfd, metadata);
+  printf("Recevied the meta data\n");
+  int ret2 = receive_data_p2p(connfd, metadata);
+  printf("Ret1: %d    Ret2: %d \n", ret1, ret2);
+  free(metadata);
+  }
+}
+    // tracker_recvPkt(connfd, &pkt_recv);
+
+
+    // if(pkt_recv.type == REGISTER) {
+
+    //  tracker_peer_t entry;
+    //  create_peer_table_entry(pkt_recv, connfd, &entry);
+    //  update_peer_table(&entry);
+
+    //  //create a pkt to send back to peer, for peer to set up itself
+    //  ptp_tracker_t pkt_response;
+    //  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+    //  pkt_response.interval = HEARTBEAT_INTERVAL;
+    //  pkt_response.piece_len = PIECE_LENGTH;
+    //  pkt_response.file_table_size = getFileTableSize();
+
+
+    //  //copy tracker side filetable to pkt_response
+    //  pthread_mutex_lock(filetable_mutext);
+    //  Node* temp = filetable_headPtr;
+    //  int i = 0;
+    //  while(temp != NULL) {
+    //    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+    //    i++;
+    //    temp = (Node*)temp->pNext;
+    //  }
+    //  pthread_mutex_unlock(filetable_mutext);
+
+
+    //  //send the configured pkt back to peer
+    //  tracker_sendPkt(connfd, pkt_response);
+      
+    //  //receive messages from this peer and respond if needed
+    //  //by using the peer-tracker handshake protocal
+    //  pthread_t handshake_thread;
+    //  pthread_create(&handshake_thread, NULL, handshake, &entry);
+      
+    // }
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <errno.h>
+#include <time.h>
+#include <pthread.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/time.h>
+#include <assert.h>
+
+// #include "tracker.h"
+#include "../common/constants.h"
+#include "../common/pkt.h"
+#include "../peer/peer_helpers.h"
+// #include "../common/constants.h"
+
+
+int svr_sd;
+
+/**
+ * update file table on the tracker, based on the received FILEUPDATE packet from the peer
+ * @param pktPtr [FILEUPDATE packet received from peer]
+ */
+// void updateFileTable(ptp_peer_t* pktPtr){
+//  Node* iter = filetable_headPtr;
+
+
+//  if(iter == NULL){
+
+//    int i;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+
+//      //get the i-th entry int the peer-side file table
+//      Node newEntry;
+//      memset(&newEntry, 0, sizeof(Node));
+//      newEntry.size = pktPtr->file_table[i].size;
+//      memcpy(newEntry.name, pktPtr->file_table[i].name, FILE_NAME_MAX_LEN);
+//      newEntry.pNext = NULL;
+//      memset(newEntry.newpeerip, 0, IP_LEN * MAX_PEER_NUM); //memset to 0
+//      memcpy(newEntry.newpeerip, pktPtr->file_table[i].newpeerip, IP_LEN);//TODO: not sure how to update
+//      //append it to the file
+//      appendFileEntry(newEntry);
+//      i++;
+//    }
+
+//    return;
+
+//  } else {
+//    int i;
+//    char* peerip = pktPtr->newpeerip;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+//      char* name = pktPtr->file_table[i].name;
+
+
+//    }
+//  }
+
+// }
+
+
+
+
+
+
+
+
+
+
+// void broadcastFileTable(){
+//  tracker_peer_t* peerIter = tracker_peertable_headPtr;
+  
+
+//  //create a pkt as a reponse to be broadcast to all peers
+//  ptp_tracker_t pkt_response;
+//  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+//  pkt_response.interval = HEARTBEAT_INTERVAL;
+//  pkt_response.piece_len = PIECE_LENGTH;
+//  pkt_response.file_table_size = getFileTableSize();
+
+
+//  //copy tracker side filetable to pkt_response
+//  pthread_mutex_lock(filetable_mutext);
+//  Node* temp = filetable_headPtr;
+//  int i = 0;
+//  while(temp != NULL) {
+//    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+//    i++;
+//    temp = (Node*)temp->pNext;
+//  }
+//  pthread_mutex_unlock(filetable_mutext);
+
+
+//  //send the pkt_response to all peers (braodcasting)
+//  while(peerItr != NULL){
+//    if(tracker_sendPkt(peerIter->sockfd, pkt_response) < 0){
+//      //TODO: if failed then ...delete the entry
+//    } else {
+//      peerItr = peerItr->next;
+//    }
+//  }
+
+//  free(pkt_response);
+// }
+
+
+
+
+// void* monitorAlive(void* arg){
+//  while(1){
+//    sleep(MINITOR_ALIVE_INTERVAL);
+//    unsigned long curTime = getCurrentTime();
+//    //compare current time with each file's last_time_stamp
+//    //if the difference larger than timeout value, delete the corresponding entry
+//    // deleteDeadPeers(unsigned long curTime);//TODO
+//  }
+// }
+
+
+//create a particular server socket using given port number
+int create_server_socket(int portNum) {
+  printf("%s called \n", __func__);
+
+  int tcpserv_sd;
+  struct sockaddr_in tcpserv_addr;
+
+  //create a server socket, and configure its port
+  tcpserv_sd = socket(AF_INET, SOCK_STREAM, 0); 
+  if(tcpserv_sd<0) 
+    return -1;
+  memset(&tcpserv_addr, 0, sizeof(tcpserv_addr));
+  tcpserv_addr.sin_family = AF_INET;
+  tcpserv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  tcpserv_addr.sin_port = htons(portNum);
+
+
+  if(bind(tcpserv_sd, (struct sockaddr *)&tcpserv_addr, sizeof(tcpserv_addr))< 0)
+    return -1; 
+  if(listen(tcpserv_sd, 1) < 0) 
+    return -1;
+
+  printf("%s finished successfully\n", __func__);
+  return tcpserv_sd;
+}
+
+
+
+// *
+//  * create an entry in the tracker side peer table according to the REGISTER packet receieved from peer
+//  * @param pkt   [REGISTER packet from peer]
+//  * @param entry [created entry in the tracker-side peer table]
+//  * @param connfd [the conneciton between this trakcer and the peer from where the pkt is from]
+ 
+//  void create_peer_table_entry(ptp_peer_t pkt, int connfd, tracker_peer_t* entryPtr){
+//    memset(entryPtr, 0, sizeof(tracker_peer_t));
+//    memcpy(entryPtr->ip, pkt.peer_ip, IP_LEN);
+//    entryPtr->last_time_stamp = getCurrentTime();
+
+//    entryPtr->sockfd = connfd;
+//    entryPtr->next = NULL;
+
+//  }
+
+
+
+
+
+int main() {
+
+  //create a socket on HANDSHAKE_PORT
+  svr_sd = create_server_socket(TRACKER_PEER_PORT);
+  assert(svr_sd >= 0);
+
+  //start a thread to minitor & accept alive message from online peers periodically
+  //remove dead peers if timeout occurs
+  // pthread_t minitorAlive_thread;
+  // pthread_create(&minitorAlive_thread, NULL, monitorAlive, NULL);
+
+
+  //keeps listening on the socket binded with HANDSHAKE_PORT
+  while(1) {
+
+    //receive the REGISTER pkt if any
+    struct sockaddr_in client_addr;
+    socklen_t length = sizeof(client_addr);
+    int connfd = accept(svr_sd, (struct sockaddr*) &client_addr, &length);
+    assert(connfd >= 0);
+      printf("Connected!\n");
+
+    //Test receiving packet from peer
+    ptp_peer_t* packet = calloc(1, sizeof(ptp_peer_t));
+    recv_pkt_from_peer(packet, connfd);
+
+    printf("Recvining packet from peer\n");
+    printf("protocal len: %d\n", packet -> protocol_len);
+    printf("type: %d\n", packet -> type);
+    printf("peer_ip: %s\n", packet -> peer_ip);
+    printf("port: %d\n", packet -> port);
+    printf("file_table_size: %d\n", packet -> file_table_size);
+
+    free(packet);
+
+    //Test sending packet to peer
+    ptp_tracker_t* pkt = calloc(1, sizeof(ptp_tracker_t));
+    pkt -> interval = 1929;
+    pkt -> piece_len = 1234;
+    pkt -> file_table_size = 212;
+
+  if (send_pkt_tracker_to_peer(pkt, connfd) < 0){
+    printf("Error sending the register packet\n");
+  }
+  free(packet);
+
+
+  printf("testing receiving a file\n");
+  file_metadata_t* metadata = calloc(1, sizeof(file_metadata_t));
+  int ret1 = receive_meta_data_info(connfd, metadata);
+  printf("Recevied the meta data\n");
+  int ret2 = receive_data_p2p(connfd, metadata);
+  printf("Ret1: %d    Ret2: %d \n", ret1, ret2);
+  free(metadata);
+  }
+}
+    // tracker_recvPkt(connfd, &pkt_recv);
+
+
+    // if(pkt_recv.type == REGISTER) {
+
+    //  tracker_peer_t entry;
+    //  create_peer_table_entry(pkt_recv, connfd, &entry);
+    //  update_peer_table(&entry);
+
+    //  //create a pkt to send back to peer, for peer to set up itself
+    //  ptp_tracker_t pkt_response;
+    //  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+    //  pkt_response.interval = HEARTBEAT_INTERVAL;
+    //  pkt_response.piece_len = PIECE_LENGTH;
+    //  pkt_response.file_table_size = getFileTableSize();
+
+
+    //  //copy tracker side filetable to pkt_response
+    //  pthread_mutex_lock(filetable_mutext);
+    //  Node* temp = filetable_headPtr;
+    //  int i = 0;
+    //  while(temp != NULL) {
+    //    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+    //    i++;
+    //    temp = (Node*)temp->pNext;
+    //  }
+    //  pthread_mutex_unlock(filetable_mutext);
+
+
+    //  //send the configured pkt back to peer
+    //  tracker_sendPkt(connfd, pkt_response);
+      
+    //  //receive messages from this peer and respond if needed
+    //  //by using the peer-tracker handshake protocal
+    //  pthread_t handshake_thread;
+    //  pthread_create(&handshake_thread, NULL, handshake, &entry);
+      
+    // }
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <errno.h>
+#include <time.h>
+#include <pthread.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/time.h>
+#include <assert.h>
+
+// #include "tracker.h"
+#include "../common/constants.h"
+#include "../common/pkt.h"
+#include "../peer/peer_helpers.h"
+// #include "../common/constants.h"
+
+
+int svr_sd;
+
+/**
+ * update file table on the tracker, based on the received FILEUPDATE packet from the peer
+ * @param pktPtr [FILEUPDATE packet received from peer]
+ */
+// void updateFileTable(ptp_peer_t* pktPtr){
+//  Node* iter = filetable_headPtr;
+
+
+//  if(iter == NULL){
+
+//    int i;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+
+//      //get the i-th entry int the peer-side file table
+//      Node newEntry;
+//      memset(&newEntry, 0, sizeof(Node));
+//      newEntry.size = pktPtr->file_table[i].size;
+//      memcpy(newEntry.name, pktPtr->file_table[i].name, FILE_NAME_MAX_LEN);
+//      newEntry.pNext = NULL;
+//      memset(newEntry.newpeerip, 0, IP_LEN * MAX_PEER_NUM); //memset to 0
+//      memcpy(newEntry.newpeerip, pktPtr->file_table[i].newpeerip, IP_LEN);//TODO: not sure how to update
+//      //append it to the file
+//      appendFileEntry(newEntry);
+//      i++;
+//    }
+
+//    return;
+
+//  } else {
+//    int i;
+//    char* peerip = pktPtr->newpeerip;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+//      char* name = pktPtr->file_table[i].name;
+
+
+//    }
+//  }
+
+// }
+
+
+
+
+
+
+
+
+
+
+// void broadcastFileTable(){
+//  tracker_peer_t* peerIter = tracker_peertable_headPtr;
+  
+
+//  //create a pkt as a reponse to be broadcast to all peers
+//  ptp_tracker_t pkt_response;
+//  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+//  pkt_response.interval = HEARTBEAT_INTERVAL;
+//  pkt_response.piece_len = PIECE_LENGTH;
+//  pkt_response.file_table_size = getFileTableSize();
+
+
+//  //copy tracker side filetable to pkt_response
+//  pthread_mutex_lock(filetable_mutext);
+//  Node* temp = filetable_headPtr;
+//  int i = 0;
+//  while(temp != NULL) {
+//    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+//    i++;
+//    temp = (Node*)temp->pNext;
+//  }
+//  pthread_mutex_unlock(filetable_mutext);
+
+
+//  //send the pkt_response to all peers (braodcasting)
+//  while(peerItr != NULL){
+//    if(tracker_sendPkt(peerIter->sockfd, pkt_response) < 0){
+//      //TODO: if failed then ...delete the entry
+//    } else {
+//      peerItr = peerItr->next;
+//    }
+//  }
+
+//  free(pkt_response);
+// }
+
+
+
+
+// void* monitorAlive(void* arg){
+//  while(1){
+//    sleep(MINITOR_ALIVE_INTERVAL);
+//    unsigned long curTime = getCurrentTime();
+//    //compare current time with each file's last_time_stamp
+//    //if the difference larger than timeout value, delete the corresponding entry
+//    // deleteDeadPeers(unsigned long curTime);//TODO
+//  }
+// }
+
+
+//create a particular server socket using given port number
+int create_server_socket(int portNum) {
+  printf("%s called \n", __func__);
+
+  int tcpserv_sd;
+  struct sockaddr_in tcpserv_addr;
+
+  //create a server socket, and configure its port
+  tcpserv_sd = socket(AF_INET, SOCK_STREAM, 0); 
+  if(tcpserv_sd<0) 
+    return -1;
+  memset(&tcpserv_addr, 0, sizeof(tcpserv_addr));
+  tcpserv_addr.sin_family = AF_INET;
+  tcpserv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  tcpserv_addr.sin_port = htons(portNum);
+
+
+  if(bind(tcpserv_sd, (struct sockaddr *)&tcpserv_addr, sizeof(tcpserv_addr))< 0)
+    return -1; 
+  if(listen(tcpserv_sd, 1) < 0) 
+    return -1;
+
+  printf("%s finished successfully\n", __func__);
+  return tcpserv_sd;
+}
+
+
+
+// *
+//  * create an entry in the tracker side peer table according to the REGISTER packet receieved from peer
+//  * @param pkt   [REGISTER packet from peer]
+//  * @param entry [created entry in the tracker-side peer table]
+//  * @param connfd [the conneciton between this trakcer and the peer from where the pkt is from]
+ 
+//  void create_peer_table_entry(ptp_peer_t pkt, int connfd, tracker_peer_t* entryPtr){
+//    memset(entryPtr, 0, sizeof(tracker_peer_t));
+//    memcpy(entryPtr->ip, pkt.peer_ip, IP_LEN);
+//    entryPtr->last_time_stamp = getCurrentTime();
+
+//    entryPtr->sockfd = connfd;
+//    entryPtr->next = NULL;
+
+//  }
+
+
+
+
+
+int main() {
+
+  //create a socket on HANDSHAKE_PORT
+  svr_sd = create_server_socket(TRACKER_PEER_PORT);
+  assert(svr_sd >= 0);
+
+  //start a thread to minitor & accept alive message from online peers periodically
+  //remove dead peers if timeout occurs
+  // pthread_t minitorAlive_thread;
+  // pthread_create(&minitorAlive_thread, NULL, monitorAlive, NULL);
+
+
+  //keeps listening on the socket binded with HANDSHAKE_PORT
+  while(1) {
+
+    //receive the REGISTER pkt if any
+    struct sockaddr_in client_addr;
+    socklen_t length = sizeof(client_addr);
+    int connfd = accept(svr_sd, (struct sockaddr*) &client_addr, &length);
+    assert(connfd >= 0);
+      printf("Connected!\n");
+
+    //Test receiving packet from peer
+    ptp_peer_t* packet = calloc(1, sizeof(ptp_peer_t));
+    recv_pkt_from_peer(packet, connfd);
+
+    printf("Recvining packet from peer\n");
+    printf("protocal len: %d\n", packet -> protocol_len);
+    printf("type: %d\n", packet -> type);
+    printf("peer_ip: %s\n", packet -> peer_ip);
+    printf("port: %d\n", packet -> port);
+    printf("file_table_size: %d\n", packet -> file_table_size);
+
+    free(packet);
+
+    //Test sending packet to peer
+    ptp_tracker_t* pkt = calloc(1, sizeof(ptp_tracker_t));
+    pkt -> interval = 1929;
+    pkt -> piece_len = 1234;
+    pkt -> file_table_size = 212;
+
+  if (send_pkt_tracker_to_peer(pkt, connfd) < 0){
+    printf("Error sending the register packet\n");
+  }
+  free(packet);
+
+
+  printf("testing receiving a file\n");
+  file_metadata_t* metadata = calloc(1, sizeof(file_metadata_t));
+  int ret1 = receive_meta_data_info(connfd, metadata);
+  printf("Recevied the meta data\n");
+  int ret2 = receive_data_p2p(connfd, metadata);
+  printf("Ret1: %d    Ret2: %d \n", ret1, ret2);
+  free(metadata);
+  }
+}
+    // tracker_recvPkt(connfd, &pkt_recv);
+
+
+    // if(pkt_recv.type == REGISTER) {
+
+    //  tracker_peer_t entry;
+    //  create_peer_table_entry(pkt_recv, connfd, &entry);
+    //  update_peer_table(&entry);
+
+    //  //create a pkt to send back to peer, for peer to set up itself
+    //  ptp_tracker_t pkt_response;
+    //  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+    //  pkt_response.interval = HEARTBEAT_INTERVAL;
+    //  pkt_response.piece_len = PIECE_LENGTH;
+    //  pkt_response.file_table_size = getFileTableSize();
+
+
+    //  //copy tracker side filetable to pkt_response
+    //  pthread_mutex_lock(filetable_mutext);
+    //  Node* temp = filetable_headPtr;
+    //  int i = 0;
+    //  while(temp != NULL) {
+    //    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+    //    i++;
+    //    temp = (Node*)temp->pNext;
+    //  }
+    //  pthread_mutex_unlock(filetable_mutext);
+
+
+    //  //send the configured pkt back to peer
+    //  tracker_sendPkt(connfd, pkt_response);
+      
+    //  //receive messages from this peer and respond if needed
+    //  //by using the peer-tracker handshake protocal
+    //  pthread_t handshake_thread;
+    //  pthread_create(&handshake_thread, NULL, handshake, &entry);
+      
+    // }
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <errno.h>
+#include <time.h>
+#include <pthread.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/time.h>
+#include <assert.h>
+
+// #include "tracker.h"
+#include "../common/constants.h"
+#include "../common/pkt.h"
+#include "../peer/peer_helpers.h"
+// #include "../common/constants.h"
+
+
+int svr_sd;
+
+/**
+ * update file table on the tracker, based on the received FILEUPDATE packet from the peer
+ * @param pktPtr [FILEUPDATE packet received from peer]
+ */
+// void updateFileTable(ptp_peer_t* pktPtr){
+//  Node* iter = filetable_headPtr;
+
+
+//  if(iter == NULL){
+
+//    int i;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+
+//      //get the i-th entry int the peer-side file table
+//      Node newEntry;
+//      memset(&newEntry, 0, sizeof(Node));
+//      newEntry.size = pktPtr->file_table[i].size;
+//      memcpy(newEntry.name, pktPtr->file_table[i].name, FILE_NAME_MAX_LEN);
+//      newEntry.pNext = NULL;
+//      memset(newEntry.newpeerip, 0, IP_LEN * MAX_PEER_NUM); //memset to 0
+//      memcpy(newEntry.newpeerip, pktPtr->file_table[i].newpeerip, IP_LEN);//TODO: not sure how to update
+//      //append it to the file
+//      appendFileEntry(newEntry);
+//      i++;
+//    }
+
+//    return;
+
+//  } else {
+//    int i;
+//    char* peerip = pktPtr->newpeerip;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+//      char* name = pktPtr->file_table[i].name;
+
+
+//    }
+//  }
+
+// }
+
+
+
+
+
+
+
+
+
+
+// void broadcastFileTable(){
+//  tracker_peer_t* peerIter = tracker_peertable_headPtr;
+  
+
+//  //create a pkt as a reponse to be broadcast to all peers
+//  ptp_tracker_t pkt_response;
+//  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+//  pkt_response.interval = HEARTBEAT_INTERVAL;
+//  pkt_response.piece_len = PIECE_LENGTH;
+//  pkt_response.file_table_size = getFileTableSize();
+
+
+//  //copy tracker side filetable to pkt_response
+//  pthread_mutex_lock(filetable_mutext);
+//  Node* temp = filetable_headPtr;
+//  int i = 0;
+//  while(temp != NULL) {
+//    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+//    i++;
+//    temp = (Node*)temp->pNext;
+//  }
+//  pthread_mutex_unlock(filetable_mutext);
+
+
+//  //send the pkt_response to all peers (braodcasting)
+//  while(peerItr != NULL){
+//    if(tracker_sendPkt(peerIter->sockfd, pkt_response) < 0){
+//      //TODO: if failed then ...delete the entry
+//    } else {
+//      peerItr = peerItr->next;
+//    }
+//  }
+
+//  free(pkt_response);
+// }
+
+
+
+
+// void* monitorAlive(void* arg){
+//  while(1){
+//    sleep(MINITOR_ALIVE_INTERVAL);
+//    unsigned long curTime = getCurrentTime();
+//    //compare current time with each file's last_time_stamp
+//    //if the difference larger than timeout value, delete the corresponding entry
+//    // deleteDeadPeers(unsigned long curTime);//TODO
+//  }
+// }
+
+
+//create a particular server socket using given port number
+int create_server_socket(int portNum) {
+  printf("%s called \n", __func__);
+
+  int tcpserv_sd;
+  struct sockaddr_in tcpserv_addr;
+
+  //create a server socket, and configure its port
+  tcpserv_sd = socket(AF_INET, SOCK_STREAM, 0); 
+  if(tcpserv_sd<0) 
+    return -1;
+  memset(&tcpserv_addr, 0, sizeof(tcpserv_addr));
+  tcpserv_addr.sin_family = AF_INET;
+  tcpserv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  tcpserv_addr.sin_port = htons(portNum);
+
+
+  if(bind(tcpserv_sd, (struct sockaddr *)&tcpserv_addr, sizeof(tcpserv_addr))< 0)
+    return -1; 
+  if(listen(tcpserv_sd, 1) < 0) 
+    return -1;
+
+  printf("%s finished successfully\n", __func__);
+  return tcpserv_sd;
+}
+
+
+
+// *
+//  * create an entry in the tracker side peer table according to the REGISTER packet receieved from peer
+//  * @param pkt   [REGISTER packet from peer]
+//  * @param entry [created entry in the tracker-side peer table]
+//  * @param connfd [the conneciton between this trakcer and the peer from where the pkt is from]
+ 
+//  void create_peer_table_entry(ptp_peer_t pkt, int connfd, tracker_peer_t* entryPtr){
+//    memset(entryPtr, 0, sizeof(tracker_peer_t));
+//    memcpy(entryPtr->ip, pkt.peer_ip, IP_LEN);
+//    entryPtr->last_time_stamp = getCurrentTime();
+
+//    entryPtr->sockfd = connfd;
+//    entryPtr->next = NULL;
+
+//  }
+
+
+
+
+
+int main() {
+
+  //create a socket on HANDSHAKE_PORT
+  svr_sd = create_server_socket(TRACKER_PEER_PORT);
+  assert(svr_sd >= 0);
+
+  //start a thread to minitor & accept alive message from online peers periodically
+  //remove dead peers if timeout occurs
+  // pthread_t minitorAlive_thread;
+  // pthread_create(&minitorAlive_thread, NULL, monitorAlive, NULL);
+
+
+  //keeps listening on the socket binded with HANDSHAKE_PORT
+  while(1) {
+
+    //receive the REGISTER pkt if any
+    struct sockaddr_in client_addr;
+    socklen_t length = sizeof(client_addr);
+    int connfd = accept(svr_sd, (struct sockaddr*) &client_addr, &length);
+    assert(connfd >= 0);
+      printf("Connected!\n");
+
+    //Test receiving packet from peer
+    ptp_peer_t* packet = calloc(1, sizeof(ptp_peer_t));
+    recv_pkt_from_peer(packet, connfd);
+
+    printf("Recvining packet from peer\n");
+    printf("protocal len: %d\n", packet -> protocol_len);
+    printf("type: %d\n", packet -> type);
+    printf("peer_ip: %s\n", packet -> peer_ip);
+    printf("port: %d\n", packet -> port);
+    printf("file_table_size: %d\n", packet -> file_table_size);
+
+    free(packet);
+
+    //Test sending packet to peer
+    ptp_tracker_t* pkt = calloc(1, sizeof(ptp_tracker_t));
+    pkt -> interval = 1929;
+    pkt -> piece_len = 1234;
+    pkt -> file_table_size = 212;
+
+  if (send_pkt_tracker_to_peer(pkt, connfd) < 0){
+    printf("Error sending the register packet\n");
+  }
+  free(packet);
+
+
+  printf("testing receiving a file\n");
+  file_metadata_t* metadata = calloc(1, sizeof(file_metadata_t));
+  int ret1 = receive_meta_data_info(connfd, metadata);
+  printf("Recevied the meta data\n");
+  int ret2 = receive_data_p2p(connfd, metadata);
+  printf("Ret1: %d    Ret2: %d \n", ret1, ret2);
+  free(metadata);
+  }
+}
+    // tracker_recvPkt(connfd, &pkt_recv);
+
+
+    // if(pkt_recv.type == REGISTER) {
+
+    //  tracker_peer_t entry;
+    //  create_peer_table_entry(pkt_recv, connfd, &entry);
+    //  update_peer_table(&entry);
+
+    //  //create a pkt to send back to peer, for peer to set up itself
+    //  ptp_tracker_t pkt_response;
+    //  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+    //  pkt_response.interval = HEARTBEAT_INTERVAL;
+    //  pkt_response.piece_len = PIECE_LENGTH;
+    //  pkt_response.file_table_size = getFileTableSize();
+
+
+    //  //copy tracker side filetable to pkt_response
+    //  pthread_mutex_lock(filetable_mutext);
+    //  Node* temp = filetable_headPtr;
+    //  int i = 0;
+    //  while(temp != NULL) {
+    //    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+    //    i++;
+    //    temp = (Node*)temp->pNext;
+    //  }
+    //  pthread_mutex_unlock(filetable_mutext);
+
+
+    //  //send the configured pkt back to peer
+    //  tracker_sendPkt(connfd, pkt_response);
+      
+    //  //receive messages from this peer and respond if needed
+    //  //by using the peer-tracker handshake protocal
+    //  pthread_t handshake_thread;
+    //  pthread_create(&handshake_thread, NULL, handshake, &entry);
+      
+    // }
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <errno.h>
+#include <time.h>
+#include <pthread.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/time.h>
+#include <assert.h>
+
+// #include "tracker.h"
+#include "../common/constants.h"
+#include "../common/pkt.h"
+#include "../peer/peer_helpers.h"
+// #include "../common/constants.h"
+
+
+int svr_sd;
+
+/**
+ * update file table on the tracker, based on the received FILEUPDATE packet from the peer
+ * @param pktPtr [FILEUPDATE packet received from peer]
+ */
+// void updateFileTable(ptp_peer_t* pktPtr){
+//  Node* iter = filetable_headPtr;
+
+
+//  if(iter == NULL){
+
+//    int i;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+
+//      //get the i-th entry int the peer-side file table
+//      Node newEntry;
+//      memset(&newEntry, 0, sizeof(Node));
+//      newEntry.size = pktPtr->file_table[i].size;
+//      memcpy(newEntry.name, pktPtr->file_table[i].name, FILE_NAME_MAX_LEN);
+//      newEntry.pNext = NULL;
+//      memset(newEntry.newpeerip, 0, IP_LEN * MAX_PEER_NUM); //memset to 0
+//      memcpy(newEntry.newpeerip, pktPtr->file_table[i].newpeerip, IP_LEN);//TODO: not sure how to update
+//      //append it to the file
+//      appendFileEntry(newEntry);
+//      i++;
+//    }
+
+//    return;
+
+//  } else {
+//    int i;
+//    char* peerip = pktPtr->newpeerip;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+//      char* name = pktPtr->file_table[i].name;
+
+
+//    }
+//  }
+
+// }
+
+
+
+
+
+
+
+
+
+
+// void broadcastFileTable(){
+//  tracker_peer_t* peerIter = tracker_peertable_headPtr;
+  
+
+//  //create a pkt as a reponse to be broadcast to all peers
+//  ptp_tracker_t pkt_response;
+//  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+//  pkt_response.interval = HEARTBEAT_INTERVAL;
+//  pkt_response.piece_len = PIECE_LENGTH;
+//  pkt_response.file_table_size = getFileTableSize();
+
+
+//  //copy tracker side filetable to pkt_response
+//  pthread_mutex_lock(filetable_mutext);
+//  Node* temp = filetable_headPtr;
+//  int i = 0;
+//  while(temp != NULL) {
+//    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+//    i++;
+//    temp = (Node*)temp->pNext;
+//  }
+//  pthread_mutex_unlock(filetable_mutext);
+
+
+//  //send the pkt_response to all peers (braodcasting)
+//  while(peerItr != NULL){
+//    if(tracker_sendPkt(peerIter->sockfd, pkt_response) < 0){
+//      //TODO: if failed then ...delete the entry
+//    } else {
+//      peerItr = peerItr->next;
+//    }
+//  }
+
+//  free(pkt_response);
+// }
+
+
+
+
+// void* monitorAlive(void* arg){
+//  while(1){
+//    sleep(MINITOR_ALIVE_INTERVAL);
+//    unsigned long curTime = getCurrentTime();
+//    //compare current time with each file's last_time_stamp
+//    //if the difference larger than timeout value, delete the corresponding entry
+//    // deleteDeadPeers(unsigned long curTime);//TODO
+//  }
+// }
+
+
+//create a particular server socket using given port number
+int create_server_socket(int portNum) {
+  printf("%s called \n", __func__);
+
+  int tcpserv_sd;
+  struct sockaddr_in tcpserv_addr;
+
+  //create a server socket, and configure its port
+  tcpserv_sd = socket(AF_INET, SOCK_STREAM, 0); 
+  if(tcpserv_sd<0) 
+    return -1;
+  memset(&tcpserv_addr, 0, sizeof(tcpserv_addr));
+  tcpserv_addr.sin_family = AF_INET;
+  tcpserv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  tcpserv_addr.sin_port = htons(portNum);
+
+
+  if(bind(tcpserv_sd, (struct sockaddr *)&tcpserv_addr, sizeof(tcpserv_addr))< 0)
+    return -1; 
+  if(listen(tcpserv_sd, 1) < 0) 
+    return -1;
+
+  printf("%s finished successfully\n", __func__);
+  return tcpserv_sd;
+}
+
+
+
+// *
+//  * create an entry in the tracker side peer table according to the REGISTER packet receieved from peer
+//  * @param pkt   [REGISTER packet from peer]
+//  * @param entry [created entry in the tracker-side peer table]
+//  * @param connfd [the conneciton between this trakcer and the peer from where the pkt is from]
+ 
+//  void create_peer_table_entry(ptp_peer_t pkt, int connfd, tracker_peer_t* entryPtr){
+//    memset(entryPtr, 0, sizeof(tracker_peer_t));
+//    memcpy(entryPtr->ip, pkt.peer_ip, IP_LEN);
+//    entryPtr->last_time_stamp = getCurrentTime();
+
+//    entryPtr->sockfd = connfd;
+//    entryPtr->next = NULL;
+
+//  }
+
+
+
+
+
+int main() {
+
+  //create a socket on HANDSHAKE_PORT
+  svr_sd = create_server_socket(TRACKER_PEER_PORT);
+  assert(svr_sd >= 0);
+
+  //start a thread to minitor & accept alive message from online peers periodically
+  //remove dead peers if timeout occurs
+  // pthread_t minitorAlive_thread;
+  // pthread_create(&minitorAlive_thread, NULL, monitorAlive, NULL);
+
+
+  //keeps listening on the socket binded with HANDSHAKE_PORT
+  while(1) {
+
+    //receive the REGISTER pkt if any
+    struct sockaddr_in client_addr;
+    socklen_t length = sizeof(client_addr);
+    int connfd = accept(svr_sd, (struct sockaddr*) &client_addr, &length);
+    assert(connfd >= 0);
+      printf("Connected!\n");
+
+    //Test receiving packet from peer
+    ptp_peer_t* packet = calloc(1, sizeof(ptp_peer_t));
+    recv_pkt_from_peer(packet, connfd);
+
+    printf("Recvining packet from peer\n");
+    printf("protocal len: %d\n", packet -> protocol_len);
+    printf("type: %d\n", packet -> type);
+    printf("peer_ip: %s\n", packet -> peer_ip);
+    printf("port: %d\n", packet -> port);
+    printf("file_table_size: %d\n", packet -> file_table_size);
+
+    free(packet);
+
+    //Test sending packet to peer
+    ptp_tracker_t* pkt = calloc(1, sizeof(ptp_tracker_t));
+    pkt -> interval = 1929;
+    pkt -> piece_len = 1234;
+    pkt -> file_table_size = 212;
+
+  if (send_pkt_tracker_to_peer(pkt, connfd) < 0){
+    printf("Error sending the register packet\n");
+  }
+  free(packet);
+
+
+  printf("testing receiving a file\n");
+  file_metadata_t* metadata = calloc(1, sizeof(file_metadata_t));
+  int ret1 = receive_meta_data_info(connfd, metadata);
+  printf("Recevied the meta data\n");
+  int ret2 = receive_data_p2p(connfd, metadata);
+  printf("Ret1: %d    Ret2: %d \n", ret1, ret2);
+  free(metadata);
+  }
+}
+    // tracker_recvPkt(connfd, &pkt_recv);
+
+
+    // if(pkt_recv.type == REGISTER) {
+
+    //  tracker_peer_t entry;
+    //  create_peer_table_entry(pkt_recv, connfd, &entry);
+    //  update_peer_table(&entry);
+
+    //  //create a pkt to send back to peer, for peer to set up itself
+    //  ptp_tracker_t pkt_response;
+    //  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+    //  pkt_response.interval = HEARTBEAT_INTERVAL;
+    //  pkt_response.piece_len = PIECE_LENGTH;
+    //  pkt_response.file_table_size = getFileTableSize();
+
+
+    //  //copy tracker side filetable to pkt_response
+    //  pthread_mutex_lock(filetable_mutext);
+    //  Node* temp = filetable_headPtr;
+    //  int i = 0;
+    //  while(temp != NULL) {
+    //    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+    //    i++;
+    //    temp = (Node*)temp->pNext;
+    //  }
+    //  pthread_mutex_unlock(filetable_mutext);
+
+
+    //  //send the configured pkt back to peer
+    //  tracker_sendPkt(connfd, pkt_response);
+      
+    //  //receive messages from this peer and respond if needed
+    //  //by using the peer-tracker handshake protocal
+    //  pthread_t handshake_thread;
+    //  pthread_create(&handshake_thread, NULL, handshake, &entry);
+      
+    // }
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <errno.h>
+#include <time.h>
+#include <pthread.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/time.h>
+#include <assert.h>
+
+// #include "tracker.h"
+#include "../common/constants.h"
+#include "../common/pkt.h"
+#include "../peer/peer_helpers.h"
+// #include "../common/constants.h"
+
+
+int svr_sd;
+
+/**
+ * update file table on the tracker, based on the received FILEUPDATE packet from the peer
+ * @param pktPtr [FILEUPDATE packet received from peer]
+ */
+// void updateFileTable(ptp_peer_t* pktPtr){
+//  Node* iter = filetable_headPtr;
+
+
+//  if(iter == NULL){
+
+//    int i;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+
+//      //get the i-th entry int the peer-side file table
+//      Node newEntry;
+//      memset(&newEntry, 0, sizeof(Node));
+//      newEntry.size = pktPtr->file_table[i].size;
+//      memcpy(newEntry.name, pktPtr->file_table[i].name, FILE_NAME_MAX_LEN);
+//      newEntry.pNext = NULL;
+//      memset(newEntry.newpeerip, 0, IP_LEN * MAX_PEER_NUM); //memset to 0
+//      memcpy(newEntry.newpeerip, pktPtr->file_table[i].newpeerip, IP_LEN);//TODO: not sure how to update
+//      //append it to the file
+//      appendFileEntry(newEntry);
+//      i++;
+//    }
+
+//    return;
+
+//  } else {
+//    int i;
+//    char* peerip = pktPtr->newpeerip;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+//      char* name = pktPtr->file_table[i].name;
+
+
+//    }
+//  }
+
+// }
+
+
+
+
+
+
+
+
+
+
+// void broadcastFileTable(){
+//  tracker_peer_t* peerIter = tracker_peertable_headPtr;
+  
+
+//  //create a pkt as a reponse to be broadcast to all peers
+//  ptp_tracker_t pkt_response;
+//  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+//  pkt_response.interval = HEARTBEAT_INTERVAL;
+//  pkt_response.piece_len = PIECE_LENGTH;
+//  pkt_response.file_table_size = getFileTableSize();
+
+
+//  //copy tracker side filetable to pkt_response
+//  pthread_mutex_lock(filetable_mutext);
+//  Node* temp = filetable_headPtr;
+//  int i = 0;
+//  while(temp != NULL) {
+//    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+//    i++;
+//    temp = (Node*)temp->pNext;
+//  }
+//  pthread_mutex_unlock(filetable_mutext);
+
+
+//  //send the pkt_response to all peers (braodcasting)
+//  while(peerItr != NULL){
+//    if(tracker_sendPkt(peerIter->sockfd, pkt_response) < 0){
+//      //TODO: if failed then ...delete the entry
+//    } else {
+//      peerItr = peerItr->next;
+//    }
+//  }
+
+//  free(pkt_response);
+// }
+
+
+
+
+// void* monitorAlive(void* arg){
+//  while(1){
+//    sleep(MINITOR_ALIVE_INTERVAL);
+//    unsigned long curTime = getCurrentTime();
+//    //compare current time with each file's last_time_stamp
+//    //if the difference larger than timeout value, delete the corresponding entry
+//    // deleteDeadPeers(unsigned long curTime);//TODO
+//  }
+// }
+
+
+//create a particular server socket using given port number
+int create_server_socket(int portNum) {
+  printf("%s called \n", __func__);
+
+  int tcpserv_sd;
+  struct sockaddr_in tcpserv_addr;
+
+  //create a server socket, and configure its port
+  tcpserv_sd = socket(AF_INET, SOCK_STREAM, 0); 
+  if(tcpserv_sd<0) 
+    return -1;
+  memset(&tcpserv_addr, 0, sizeof(tcpserv_addr));
+  tcpserv_addr.sin_family = AF_INET;
+  tcpserv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  tcpserv_addr.sin_port = htons(portNum);
+
+
+  if(bind(tcpserv_sd, (struct sockaddr *)&tcpserv_addr, sizeof(tcpserv_addr))< 0)
+    return -1; 
+  if(listen(tcpserv_sd, 1) < 0) 
+    return -1;
+
+  printf("%s finished successfully\n", __func__);
+  return tcpserv_sd;
+}
+
+
+
+// *
+//  * create an entry in the tracker side peer table according to the REGISTER packet receieved from peer
+//  * @param pkt   [REGISTER packet from peer]
+//  * @param entry [created entry in the tracker-side peer table]
+//  * @param connfd [the conneciton between this trakcer and the peer from where the pkt is from]
+ 
+//  void create_peer_table_entry(ptp_peer_t pkt, int connfd, tracker_peer_t* entryPtr){
+//    memset(entryPtr, 0, sizeof(tracker_peer_t));
+//    memcpy(entryPtr->ip, pkt.peer_ip, IP_LEN);
+//    entryPtr->last_time_stamp = getCurrentTime();
+
+//    entryPtr->sockfd = connfd;
+//    entryPtr->next = NULL;
+
+//  }
+
+
+
+
+
+int main() {
+
+  //create a socket on HANDSHAKE_PORT
+  svr_sd = create_server_socket(TRACKER_PEER_PORT);
+  assert(svr_sd >= 0);
+
+  //start a thread to minitor & accept alive message from online peers periodically
+  //remove dead peers if timeout occurs
+  // pthread_t minitorAlive_thread;
+  // pthread_create(&minitorAlive_thread, NULL, monitorAlive, NULL);
+
+
+  //keeps listening on the socket binded with HANDSHAKE_PORT
+  while(1) {
+
+    //receive the REGISTER pkt if any
+    struct sockaddr_in client_addr;
+    socklen_t length = sizeof(client_addr);
+    int connfd = accept(svr_sd, (struct sockaddr*) &client_addr, &length);
+    assert(connfd >= 0);
+      printf("Connected!\n");
+
+    //Test receiving packet from peer
+    ptp_peer_t* packet = calloc(1, sizeof(ptp_peer_t));
+    recv_pkt_from_peer(packet, connfd);
+
+    printf("Recvining packet from peer\n");
+    printf("protocal len: %d\n", packet -> protocol_len);
+    printf("type: %d\n", packet -> type);
+    printf("peer_ip: %s\n", packet -> peer_ip);
+    printf("port: %d\n", packet -> port);
+    printf("file_table_size: %d\n", packet -> file_table_size);
+
+    free(packet);
+
+    //Test sending packet to peer
+    ptp_tracker_t* pkt = calloc(1, sizeof(ptp_tracker_t));
+    pkt -> interval = 1929;
+    pkt -> piece_len = 1234;
+    pkt -> file_table_size = 212;
+
+  if (send_pkt_tracker_to_peer(pkt, connfd) < 0){
+    printf("Error sending the register packet\n");
+  }
+  free(packet);
+
+
+  printf("testing receiving a file\n");
+  file_metadata_t* metadata = calloc(1, sizeof(file_metadata_t));
+  int ret1 = receive_meta_data_info(connfd, metadata);
+  printf("Recevied the meta data\n");
+  int ret2 = receive_data_p2p(connfd, metadata);
+  printf("Ret1: %d    Ret2: %d \n", ret1, ret2);
+  free(metadata);
+  }
+}
+    // tracker_recvPkt(connfd, &pkt_recv);
+
+
+    // if(pkt_recv.type == REGISTER) {
+
+    //  tracker_peer_t entry;
+    //  create_peer_table_entry(pkt_recv, connfd, &entry);
+    //  update_peer_table(&entry);
+
+    //  //create a pkt to send back to peer, for peer to set up itself
+    //  ptp_tracker_t pkt_response;
+    //  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+    //  pkt_response.interval = HEARTBEAT_INTERVAL;
+    //  pkt_response.piece_len = PIECE_LENGTH;
+    //  pkt_response.file_table_size = getFileTableSize();
+
+
+    //  //copy tracker side filetable to pkt_response
+    //  pthread_mutex_lock(filetable_mutext);
+    //  Node* temp = filetable_headPtr;
+    //  int i = 0;
+    //  while(temp != NULL) {
+    //    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+    //    i++;
+    //    temp = (Node*)temp->pNext;
+    //  }
+    //  pthread_mutex_unlock(filetable_mutext);
+
+
+    //  //send the configured pkt back to peer
+    //  tracker_sendPkt(connfd, pkt_response);
+      
+    //  //receive messages from this peer and respond if needed
+    //  //by using the peer-tracker handshake protocal
+    //  pthread_t handshake_thread;
+    //  pthread_create(&handshake_thread, NULL, handshake, &entry);
+      
+    // }
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <errno.h>
+#include <time.h>
+#include <pthread.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/time.h>
+#include <assert.h>
+
+// #include "tracker.h"
+#include "../common/constants.h"
+#include "../common/pkt.h"
+#include "../peer/peer_helpers.h"
+// #include "../common/constants.h"
+
+
+int svr_sd;
+
+/**
+ * update file table on the tracker, based on the received FILEUPDATE packet from the peer
+ * @param pktPtr [FILEUPDATE packet received from peer]
+ */
+// void updateFileTable(ptp_peer_t* pktPtr){
+//  Node* iter = filetable_headPtr;
+
+
+//  if(iter == NULL){
+
+//    int i;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+
+//      //get the i-th entry int the peer-side file table
+//      Node newEntry;
+//      memset(&newEntry, 0, sizeof(Node));
+//      newEntry.size = pktPtr->file_table[i].size;
+//      memcpy(newEntry.name, pktPtr->file_table[i].name, FILE_NAME_MAX_LEN);
+//      newEntry.pNext = NULL;
+//      memset(newEntry.newpeerip, 0, IP_LEN * MAX_PEER_NUM); //memset to 0
+//      memcpy(newEntry.newpeerip, pktPtr->file_table[i].newpeerip, IP_LEN);//TODO: not sure how to update
+//      //append it to the file
+//      appendFileEntry(newEntry);
+//      i++;
+//    }
+
+//    return;
+
+//  } else {
+//    int i;
+//    char* peerip = pktPtr->newpeerip;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+//      char* name = pktPtr->file_table[i].name;
+
+
+//    }
+//  }
+
+// }
+
+
+
+
+
+
+
+
+
+
+// void broadcastFileTable(){
+//  tracker_peer_t* peerIter = tracker_peertable_headPtr;
+  
+
+//  //create a pkt as a reponse to be broadcast to all peers
+//  ptp_tracker_t pkt_response;
+//  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+//  pkt_response.interval = HEARTBEAT_INTERVAL;
+//  pkt_response.piece_len = PIECE_LENGTH;
+//  pkt_response.file_table_size = getFileTableSize();
+
+
+//  //copy tracker side filetable to pkt_response
+//  pthread_mutex_lock(filetable_mutext);
+//  Node* temp = filetable_headPtr;
+//  int i = 0;
+//  while(temp != NULL) {
+//    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+//    i++;
+//    temp = (Node*)temp->pNext;
+//  }
+//  pthread_mutex_unlock(filetable_mutext);
+
+
+//  //send the pkt_response to all peers (braodcasting)
+//  while(peerItr != NULL){
+//    if(tracker_sendPkt(peerIter->sockfd, pkt_response) < 0){
+//      //TODO: if failed then ...delete the entry
+//    } else {
+//      peerItr = peerItr->next;
+//    }
+//  }
+
+//  free(pkt_response);
+// }
+
+
+
+
+// void* monitorAlive(void* arg){
+//  while(1){
+//    sleep(MINITOR_ALIVE_INTERVAL);
+//    unsigned long curTime = getCurrentTime();
+//    //compare current time with each file's last_time_stamp
+//    //if the difference larger than timeout value, delete the corresponding entry
+//    // deleteDeadPeers(unsigned long curTime);//TODO
+//  }
+// }
+
+
+//create a particular server socket using given port number
+int create_server_socket(int portNum) {
+  printf("%s called \n", __func__);
+
+  int tcpserv_sd;
+  struct sockaddr_in tcpserv_addr;
+
+  //create a server socket, and configure its port
+  tcpserv_sd = socket(AF_INET, SOCK_STREAM, 0); 
+  if(tcpserv_sd<0) 
+    return -1;
+  memset(&tcpserv_addr, 0, sizeof(tcpserv_addr));
+  tcpserv_addr.sin_family = AF_INET;
+  tcpserv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  tcpserv_addr.sin_port = htons(portNum);
+
+
+  if(bind(tcpserv_sd, (struct sockaddr *)&tcpserv_addr, sizeof(tcpserv_addr))< 0)
+    return -1; 
+  if(listen(tcpserv_sd, 1) < 0) 
+    return -1;
+
+  printf("%s finished successfully\n", __func__);
+  return tcpserv_sd;
+}
+
+
+
+// *
+//  * create an entry in the tracker side peer table according to the REGISTER packet receieved from peer
+//  * @param pkt   [REGISTER packet from peer]
+//  * @param entry [created entry in the tracker-side peer table]
+//  * @param connfd [the conneciton between this trakcer and the peer from where the pkt is from]
+ 
+//  void create_peer_table_entry(ptp_peer_t pkt, int connfd, tracker_peer_t* entryPtr){
+//    memset(entryPtr, 0, sizeof(tracker_peer_t));
+//    memcpy(entryPtr->ip, pkt.peer_ip, IP_LEN);
+//    entryPtr->last_time_stamp = getCurrentTime();
+
+//    entryPtr->sockfd = connfd;
+//    entryPtr->next = NULL;
+
+//  }
+
+
+
+
+
+int main() {
+
+  //create a socket on HANDSHAKE_PORT
+  svr_sd = create_server_socket(TRACKER_PEER_PORT);
+  assert(svr_sd >= 0);
+
+  //start a thread to minitor & accept alive message from online peers periodically
+  //remove dead peers if timeout occurs
+  // pthread_t minitorAlive_thread;
+  // pthread_create(&minitorAlive_thread, NULL, monitorAlive, NULL);
+
+
+  //keeps listening on the socket binded with HANDSHAKE_PORT
+  while(1) {
+
+    //receive the REGISTER pkt if any
+    struct sockaddr_in client_addr;
+    socklen_t length = sizeof(client_addr);
+    int connfd = accept(svr_sd, (struct sockaddr*) &client_addr, &length);
+    assert(connfd >= 0);
+      printf("Connected!\n");
+
+    //Test receiving packet from peer
+    ptp_peer_t* packet = calloc(1, sizeof(ptp_peer_t));
+    recv_pkt_from_peer(packet, connfd);
+
+    printf("Recvining packet from peer\n");
+    printf("protocal len: %d\n", packet -> protocol_len);
+    printf("type: %d\n", packet -> type);
+    printf("peer_ip: %s\n", packet -> peer_ip);
+    printf("port: %d\n", packet -> port);
+    printf("file_table_size: %d\n", packet -> file_table_size);
+
+    free(packet);
+
+    //Test sending packet to peer
+    ptp_tracker_t* pkt = calloc(1, sizeof(ptp_tracker_t));
+    pkt -> interval = 1929;
+    pkt -> piece_len = 1234;
+    pkt -> file_table_size = 212;
+
+  if (send_pkt_tracker_to_peer(pkt, connfd) < 0){
+    printf("Error sending the register packet\n");
+  }
+  free(packet);
+
+
+  printf("testing receiving a file\n");
+  file_metadata_t* metadata = calloc(1, sizeof(file_metadata_t));
+  int ret1 = receive_meta_data_info(connfd, metadata);
+  printf("Recevied the meta data\n");
+  int ret2 = receive_data_p2p(connfd, metadata);
+  printf("Ret1: %d    Ret2: %d \n", ret1, ret2);
+  free(metadata);
+  }
+}
+    // tracker_recvPkt(connfd, &pkt_recv);
+
+
+    // if(pkt_recv.type == REGISTER) {
+
+    //  tracker_peer_t entry;
+    //  create_peer_table_entry(pkt_recv, connfd, &entry);
+    //  update_peer_table(&entry);
+
+    //  //create a pkt to send back to peer, for peer to set up itself
+    //  ptp_tracker_t pkt_response;
+    //  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+    //  pkt_response.interval = HEARTBEAT_INTERVAL;
+    //  pkt_response.piece_len = PIECE_LENGTH;
+    //  pkt_response.file_table_size = getFileTableSize();
+
+
+    //  //copy tracker side filetable to pkt_response
+    //  pthread_mutex_lock(filetable_mutext);
+    //  Node* temp = filetable_headPtr;
+    //  int i = 0;
+    //  while(temp != NULL) {
+    //    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+    //    i++;
+    //    temp = (Node*)temp->pNext;
+    //  }
+    //  pthread_mutex_unlock(filetable_mutext);
+
+
+    //  //send the configured pkt back to peer
+    //  tracker_sendPkt(connfd, pkt_response);
+      
+    //  //receive messages from this peer and respond if needed
+    //  //by using the peer-tracker handshake protocal
+    //  pthread_t handshake_thread;
+    //  pthread_create(&handshake_thread, NULL, handshake, &entry);
+      
+    // }
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <errno.h>
+#include <time.h>
+#include <pthread.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/time.h>
+#include <assert.h>
+
+// #include "tracker.h"
+#include "../common/constants.h"
+#include "../common/pkt.h"
+#include "../peer/peer_helpers.h"
+// #include "../common/constants.h"
+
+
+int svr_sd;
+
+/**
+ * update file table on the tracker, based on the received FILEUPDATE packet from the peer
+ * @param pktPtr [FILEUPDATE packet received from peer]
+ */
+// void updateFileTable(ptp_peer_t* pktPtr){
+//  Node* iter = filetable_headPtr;
+
+
+//  if(iter == NULL){
+
+//    int i;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+
+//      //get the i-th entry int the peer-side file table
+//      Node newEntry;
+//      memset(&newEntry, 0, sizeof(Node));
+//      newEntry.size = pktPtr->file_table[i].size;
+//      memcpy(newEntry.name, pktPtr->file_table[i].name, FILE_NAME_MAX_LEN);
+//      newEntry.pNext = NULL;
+//      memset(newEntry.newpeerip, 0, IP_LEN * MAX_PEER_NUM); //memset to 0
+//      memcpy(newEntry.newpeerip, pktPtr->file_table[i].newpeerip, IP_LEN);//TODO: not sure how to update
+//      //append it to the file
+//      appendFileEntry(newEntry);
+//      i++;
+//    }
+
+//    return;
+
+//  } else {
+//    int i;
+//    char* peerip = pktPtr->newpeerip;
+//    for(i = 0; i < pktPtr->file_table_size; i++){
+//      char* name = pktPtr->file_table[i].name;
+
+
+//    }
+//  }
+
+// }
+
+
+
+
+
+
+
+
+
+
+// void broadcastFileTable(){
+//  tracker_peer_t* peerIter = tracker_peertable_headPtr;
+  
+
+//  //create a pkt as a reponse to be broadcast to all peers
+//  ptp_tracker_t pkt_response;
+//  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+//  pkt_response.interval = HEARTBEAT_INTERVAL;
+//  pkt_response.piece_len = PIECE_LENGTH;
+//  pkt_response.file_table_size = getFileTableSize();
+
+
+//  //copy tracker side filetable to pkt_response
+//  pthread_mutex_lock(filetable_mutext);
+//  Node* temp = filetable_headPtr;
+//  int i = 0;
+//  while(temp != NULL) {
+//    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+//    i++;
+//    temp = (Node*)temp->pNext;
+//  }
+//  pthread_mutex_unlock(filetable_mutext);
+
+
+//  //send the pkt_response to all peers (braodcasting)
+//  while(peerItr != NULL){
+//    if(tracker_sendPkt(peerIter->sockfd, pkt_response) < 0){
+//      //TODO: if failed then ...delete the entry
+//    } else {
+//      peerItr = peerItr->next;
+//    }
+//  }
+
+//  free(pkt_response);
+// }
+
+
+
+
+// void* monitorAlive(void* arg){
+//  while(1){
+//    sleep(MINITOR_ALIVE_INTERVAL);
+//    unsigned long curTime = getCurrentTime();
+//    //compare current time with each file's last_time_stamp
+//    //if the difference larger than timeout value, delete the corresponding entry
+//    // deleteDeadPeers(unsigned long curTime);//TODO
+//  }
+// }
+
+
+//create a particular server socket using given port number
+int create_server_socket(int portNum) {
+  printf("%s called \n", __func__);
+
+  int tcpserv_sd;
+  struct sockaddr_in tcpserv_addr;
+
+  //create a server socket, and configure its port
+  tcpserv_sd = socket(AF_INET, SOCK_STREAM, 0); 
+  if(tcpserv_sd<0) 
+    return -1;
+  memset(&tcpserv_addr, 0, sizeof(tcpserv_addr));
+  tcpserv_addr.sin_family = AF_INET;
+  tcpserv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  tcpserv_addr.sin_port = htons(portNum);
+
+
+  if(bind(tcpserv_sd, (struct sockaddr *)&tcpserv_addr, sizeof(tcpserv_addr))< 0)
+    return -1; 
+  if(listen(tcpserv_sd, 1) < 0) 
+    return -1;
+
+  printf("%s finished successfully\n", __func__);
+  return tcpserv_sd;
+}
+
+
+
+// *
+//  * create an entry in the tracker side peer table according to the REGISTER packet receieved from peer
+//  * @param pkt   [REGISTER packet from peer]
+//  * @param entry [created entry in the tracker-side peer table]
+//  * @param connfd [the conneciton between this trakcer and the peer from where the pkt is from]
+ 
+//  void create_peer_table_entry(ptp_peer_t pkt, int connfd, tracker_peer_t* entryPtr){
+//    memset(entryPtr, 0, sizeof(tracker_peer_t));
+//    memcpy(entryPtr->ip, pkt.peer_ip, IP_LEN);
+//    entryPtr->last_time_stamp = getCurrentTime();
+
+//    entryPtr->sockfd = connfd;
+//    entryPtr->next = NULL;
+
+//  }
+
+
+
+
+
+int main() {
+
+  //create a socket on HANDSHAKE_PORT
+  svr_sd = create_server_socket(TRACKER_PEER_PORT);
+  assert(svr_sd >= 0);
+
+  //start a thread to minitor & accept alive message from online peers periodically
+  //remove dead peers if timeout occurs
+  // pthread_t minitorAlive_thread;
+  // pthread_create(&minitorAlive_thread, NULL, monitorAlive, NULL);
+
+
+  //keeps listening on the socket binded with HANDSHAKE_PORT
+  while(1) {
+
+    //receive the REGISTER pkt if any
+    struct sockaddr_in client_addr;
+    socklen_t length = sizeof(client_addr);
+    int connfd = accept(svr_sd, (struct sockaddr*) &client_addr, &length);
+    assert(connfd >= 0);
+      printf("Connected!\n");
+
+    //Test receiving packet from peer
+    ptp_peer_t* packet = calloc(1, sizeof(ptp_peer_t));
+    recv_pkt_from_peer(packet, connfd);
+
+    printf("Recvining packet from peer\n");
+    printf("protocal len: %d\n", packet -> protocol_len);
+    printf("type: %d\n", packet -> type);
+    printf("peer_ip: %s\n", packet -> peer_ip);
+    printf("port: %d\n", packet -> port);
+    printf("file_table_size: %d\n", packet -> file_table_size);
+
+    free(packet);
+
+    //Test sending packet to peer
+    ptp_tracker_t* pkt = calloc(1, sizeof(ptp_tracker_t));
+    pkt -> interval = 1929;
+    pkt -> piece_len = 1234;
+    pkt -> file_table_size = 212;
+
+  if (send_pkt_tracker_to_peer(pkt, connfd) < 0){
+    printf("Error sending the register packet\n");
+  }
+  free(packet);
+
+
+  printf("testing receiving a file\n");
+  file_metadata_t* metadata = calloc(1, sizeof(file_metadata_t));
+  int ret1 = receive_meta_data_info(connfd, metadata);
+  printf("Recevied the meta data\n");
+  int ret2 = receive_data_p2p(connfd, metadata);
+  printf("Ret1: %d    Ret2: %d \n", ret1, ret2);
+  free(metadata);
+  }
+}
+    // tracker_recvPkt(connfd, &pkt_recv);
+
+
+    // if(pkt_recv.type == REGISTER) {
+
+    //  tracker_peer_t entry;
+    //  create_peer_table_entry(pkt_recv, connfd, &entry);
+    //  update_peer_table(&entry);
+
+    //  //create a pkt to send back to peer, for peer to set up itself
+    //  ptp_tracker_t pkt_response;
+    //  memset(&pkt_response, 0, sizeof(ptp_peer_t));
+    //  pkt_response.interval = HEARTBEAT_INTERVAL;
+    //  pkt_response.piece_len = PIECE_LENGTH;
+    //  pkt_response.file_table_size = getFileTableSize();
+
+
+    //  //copy tracker side filetable to pkt_response
+    //  pthread_mutex_lock(filetable_mutext);
+    //  Node* temp = filetable_headPtr;
+    //  int i = 0;
+    //  while(temp != NULL) {
+    //    memcpy(pkt_response.filetable[i], temp, sizeof(Node));
+    //    i++;
+    //    temp = (Node*)temp->pNext;
+    //  }
+    //  pthread_mutex_unlock(filetable_mutext);
+
+
+    //  //send the configured pkt back to peer
+    //  tracker_sendPkt(connfd, pkt_response);
+      
+    //  //receive messages from this peer and respond if needed
+    //  //by using the peer-tracker handshake protocal
+    //  pthread_t handshake_thread;
+    //  pthread_create(&handshake_thread, NULL, handshake, &entry);
+      
+    // }
