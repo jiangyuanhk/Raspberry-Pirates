@@ -54,12 +54,6 @@ int peertable_deleteEntryByIp(peerTable_t *table, char* ip);
 // Returns 1 on success, -1 on failure.
 void peertable_destroy(peerTable_t *table);
 
-
-int peertable_existPeer(peerTable_t *table, peerEntry_t* entry);
-
-
-
-
 peerEntry_t* peertable_searchEntryByIp(peerTable_t* table, char* ip);
 
 

@@ -5,6 +5,9 @@
 //To compile:
 // gcc -Wall -pedantic -std=c99 -ggdb -pthread -o test filetable_test.c ../common/filetable.c ../common/utils
 
+//To check for memory leaks after compiling:
+// valgrind -v --leak-check=full ./test
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -57,105 +60,71 @@ peerTable_t* create_mock_peertable() {
 	peertable -> tail = NULL;
 	peertable -> size = 0;
 
+  //create the mutex for the table
+  pthread_mutex_t* mutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(mutex, NULL);
+  peertable -> peertable_mutex = mutex;
+
   //add the mock test files
   peertable -> head = create_mock_peer_entry("192.123.342.212", 2);
-  peertable -> head -> pNext = create_mock_peer_entry("127.000.000.001", 3);
-  peertable -> head -> pNext -> pNext = create_mock_peer_entry("123.456.789.111", 4);
-  peertable -> tail = peertable -> head -> pNext -> pNext;
+  peertable -> head -> next = create_mock_peer_entry("127.000.0.1", 3);
+  peertable -> head -> next -> next = create_mock_peer_entry("123.456.789.92", 4);
+  peertable -> tail = peertable -> head -> next -> next;
   peertable -> size = 3;
   return peertable;
 }
-
 
 void test_peertable_init() {
 	printf("~~~~~~~~~Testing Function~~~~~~~~~~~~\n");
 	printf("Function: %s\n", "peertable_init");
 
-
-	fileTable_t* ft = peertable_init();
-	assert(ft -> head == NULL);
-	assert(ft -> tail == NULL);
-	assert(ft -> size == 0);
+	peerTable_t* peertable = peertable_init();
+	assert(peertable -> head == NULL);
+	assert(peertable -> tail == NULL);
+	assert(peertable -> size == 0);
+  assert(peertable -> peertable_mutex != NULL);
 	printf("SUCCESS!!\n");
 
-  //TODO free the table
-
+  peertable_destroy(peertable);
+  peertable = NULL;
 }
 
-void test_filetable_searchFileByName() {
-	printf("~~~~~~~~~Testing Function~~~~~~~~~~~~\n");
-	printf("Function: %s\n", "filetable_searchFileByName");
 
-  fileTable_t* filetable = createMockFileTable();
+void test_peertable_createEntry() {
+  printf("~~~~~~~~~Testing Function~~~~~~~~~~~~\n");
+  printf("Function: %s\n", "peertable_createEntry");
+
+  peerEntry_t* peer = peertable_createEntry("192.123.342.212", 5);
+  sleep(1);
+  assert(strcmp(peer -> ip, "192.123.342.212") == 0);
+  assert(peer -> sockfd == 5);
+  assert(peer -> timestamp <= getCurrentTime());
+  assert(peer -> next == NULL);
+  printf("SUCCESS!!\n");
+
+  free(peer);
+  peer = NULL;
+}
+
+void test_peertable_searchEntryByIp() {
+	printf("~~~~~~~~~Testing Function~~~~~~~~~~~~\n");
+	printf("Function: %s\n", "peertable_searchEntryByIp");
+
+  peerTable_t* peertable = create_mock_peertable();
 	
   //Test entry in the table
-  assert(filetable_searchFileByName(filetable -> head, "test1.txt") != NULL);
-  assert(filetable_searchFileByName(filetable -> head, "test2.txt") != NULL);
-  assert(filetable_searchFileByName(filetable -> head, "test3.txt") != NULL);
+  assert(peertable_searchEntryByIp(peertable, "192.123.342.212") != NULL);
+  assert(peertable_searchEntryByIp(peertable, "127.000.0.1") != NULL);
+  assert(peertable_searchEntryByIp(peertable, "123.456.789.92") != NULL);
 	printf("Successfully checks files in the table.\n");
   
   //Test entry not in the table
-  assert(filetable_searchFileByName(filetable -> head, "") == NULL);
-  assert(filetable_searchFileByName(filetable -> head, "test4.txt") == NULL);
-  assert(filetable_searchFileByName(filetable -> head, "test.txt") == NULL);
-
-
-  //TODO free the table
+  assert(peertable_searchEntryByIp(peertable, "") == NULL);
+  assert(peertable_searchEntryByIp(peertable, "127.000.0.111") == NULL);
+  assert(peertable_searchEntryByIp(peertable, "123.222.222.222") == NULL);
   printf("Successfully checks files not in the table.\n");
-  printf("SUCCESS\n");
-}
 
-void test_filetable_deleteFileEntryByName(){
-  printf("~~~~~~~~~Testing Function~~~~~~~~~~~~\n");
-  printf("Function: %s\n", "filetable_deleteFileEntryByName");
-
-  fileTable_t* filetable = createMockFileTable();
-  fileEntry_t * file;
-
-  //Delete the head and check that new head updated
-  assert(filetable -> size == 3);
-  file = filetable_searchFileByName(filetable -> head, "test1.txt");
-  assert(file != NULL);
-  assert(filetable -> head == file);
-  assert(filetable_deleteFileEntryByName(filetable, "test1.txt") == 1);
-  assert(filetable_searchFileByName(filetable -> head, "test1.txt") == NULL);
-  file = filetable_searchFileByName(filetable -> head, "test2.txt");
-  assert(filetable -> head == file);
-  assert(filetable -> size == 2);
-  //TODO free the old table
-  printf("Successfully deleted the head from the file table.\n");
-
-
-  //Delete the tail of the list and check the tail is updated
-  filetable = createMockFileTable();
-  assert(filetable -> size == 3);
-  file = filetable_searchFileByName(filetable -> head, "test3.txt");
-  assert(file != NULL);
-  assert(filetable -> tail == file);
-  assert(filetable_deleteFileEntryByName(filetable, "test3.txt") == 1);
-  assert(filetable_searchFileByName(filetable -> head, "test3.txt") == NULL);
-  file = filetable_searchFileByName(filetable -> head, "test2.txt");
-  assert(filetable -> tail == file);
-  assert(filetable -> size == 2);
-  //TODO free the old table
-  printf("Successfully deleted the tail from the file table\n");
-
-  //Delete something from the middle of the list
-  filetable = createMockFileTable();
-  assert(filetable -> size == 3);
-  file = filetable_searchFileByName(filetable -> head, "test2.txt");
-  assert(file != NULL);
-  assert(filetable -> head -> pNext == file);
-  assert(filetable_deleteFileEntryByName(filetable, "test2.txt") == 1);
-  assert(filetable_searchFileByName(filetable -> head, "test2.txt") == NULL);
-  file = filetable_searchFileByName(filetable -> head, "test3.txt");
-  assert(filetable -> head -> pNext == file);
-  assert(filetable -> tail == file);
-  assert(filetable -> size == 2);
-
-  //TODO free the old table
-  printf("Successfully deleted a middle file from the file table\n");
-  
+  peertable_destroy(peertable);
   printf("SUCCESS\n");
 }
 
@@ -168,6 +137,11 @@ void test_peertable_addEntry() {
   peertable -> head = NULL;
   peertable -> tail = NULL;
   peertable -> size = 0;
+
+  //create the mutex for the table
+  pthread_mutex_t* mutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(mutex, NULL);
+  peertable -> peertable_mutex = mutex;
 
   //Test add files to an empty table
   assert(peertable -> head == NULL);
@@ -183,69 +157,109 @@ void test_peertable_addEntry() {
   peertable_addEntry(peertable, entry2);
   assert(peertable -> head == entry1);
   assert(peertable -> tail == entry2);
-  assert(peertable -> head -> pNext == entry2);
+  assert(peertable -> head -> next == entry2);
   assert(peertable -> size == 2);
   printf("Successfully added files to empty table.\n");
 
-  peerTable_t* peertable1 = create_mock_peertable();
-  assert(peertable1 -> size == 3);
+  peertable_destroy(peertable);
+  peertable = NULL;
+
+  // Test adding files to an existing table
+  peertable = create_mock_peertable();
+  assert(peertable -> size == 3);
   peerEntry_t* entry3 = create_mock_peer_entry("234.124.111.222", 5);
-  peertable_addEntry(peertable1, entry3);
-  assert(peertable1 -> tail == entry3);
-  assert(peertable1 -> head -> pNext -> pNext -> pNext == entry3);
-  assert(peertable1 -> size == 4);
+  peertable_addEntry(peertable, entry3);
+  assert(peertable -> tail == entry3);
+  assert(peertable -> head -> next -> next -> next == entry3);
+  assert(peertable -> size == 4);
   printf("Successfully added files to table with files already in it.\n");
 
-  //TODO - Free the necessary memory
+  peertable_destroy(peertable);
+
   printf("SUCCESS\n");
 }
 
-void test_filetable_updateFile() {
+void test_peertable_deleteEntryByIp() {
   printf("~~~~~~~~~Testing Function~~~~~~~~~~~~\n");
-  printf("Function: %s\n", "filetable_updateFile");
+  printf("Function: %s\n", "peertable_deleteEntryByIp");
 
-  fileTable_t* filetable = createMockFileTable();
-  sleep(1); //allow for timestamps to change
+  peerTable_t* peertable = create_mock_peertable();
+  peerEntry_t * peer;
 
-  //Check successful update file
-  fileEntry_t* old_file = filetable_searchFileByName(filetable -> head, "test3.txt");
-  fileEntry_t* updated_file = create_mock_file_entry("test3.txt", 45940);
+  //Delete the head and check that new head updated
+  assert(peertable -> size == 3);
+  peer = peertable_searchEntryByIp(peertable, "192.123.342.212");
+  assert(peer != NULL);
+  assert(peertable -> head == peer);
+  assert(peertable_deleteEntryByIp(peertable, "192.123.342.212") == 1);
+  assert(peertable_searchEntryByIp(peertable, "192.123.342.212") == NULL);
+  peer = peertable_searchEntryByIp(peertable, "127.000.0.1");
+  assert(peertable -> head == peer);
+  assert(peertable -> size == 2);
+  peertable_destroy(peertable);
+  peertable = NULL;
+  printf("Successfully deleted the head from the peer table.\n");
 
-  assert(old_file != NULL);
-  assert(updated_file != NULL);
+  //Delete the tail of the list and check the tail is updated
+  peertable = create_mock_peertable();
+  assert(peertable -> size == 3);
+  peer = peertable_searchEntryByIp(peertable, "123.456.789.92");
+  assert(peer != NULL);
+  assert(peertable -> tail == peer);
+  assert(peertable_deleteEntryByIp(peertable, "123.456.789.92") == 1);
+  assert(peertable_searchEntryByIp(peertable, "123.456.789.92") == NULL);
+  peer = peertable_searchEntryByIp(peertable, "127.000.0.1");
+  assert(peertable -> tail == peer);
+  assert(peertable -> size == 2);
+  peertable_destroy(peertable);
+  peertable = NULL;
+  printf("Successfully deleted the tail from the peer table\n");
 
-  assert(old_file -> size != updated_file -> size);
-  assert(old_file -> timestamp != updated_file -> timestamp);
-  assert(filetable_updateFile(old_file, updated_file, filetable -> filetable_mutex) == 1);
-  assert(old_file -> size == updated_file -> size);
-  assert(old_file -> timestamp == updated_file -> timestamp);
-  printf("Successfully updated a file.\n");
-  //TODO - free the updated_file
-
-  //Check unsuccessful update file
-  old_file = filetable_searchFileByName(filetable -> head, "test2.txt");
-  updated_file = create_mock_file_entry("test5.txt", 45940);
-  assert(old_file -> size != updated_file -> size);
-  assert(old_file -> timestamp != updated_file -> timestamp);
-  assert(filetable_updateFile(old_file, updated_file, filetable -> filetable_mutex) == -1);
-  assert(old_file -> size != updated_file -> size);
-  assert(old_file -> timestamp != updated_file -> timestamp);
-  // TODO - free the necessary memory
-  printf("Successfully did not update a file when the names do not match.\n");
-
+  //Delete something from the middle of the list
+  peertable = create_mock_peertable();
+  assert(peertable -> size == 3);
+  peer = peertable_searchEntryByIp(peertable, "127.000.0.1");
+  assert(peer != NULL);
+  assert(peertable -> head -> next == peer);
+  assert(peertable_deleteEntryByIp(peertable, "127.000.0.1") == 1);
+  assert(peertable_searchEntryByIp(peertable, "127.000.0.1") == NULL);
+  peer = peertable_searchEntryByIp(peertable, "123.456.789.92");
+  assert(peertable -> head -> next == peer);
+  assert(peertable -> tail == peer);
+  assert(peertable -> size == 2);
+  peertable_destroy(peertable);
+  peertable = NULL;
+  printf("Successfully deleted a middle peer from the peer table\n");
+  
   printf("SUCCESS\n");
 }
 
+void test_peertable_refreshTimestamp() {
+  printf("~~~~~~~~~Testing Function~~~~~~~~~~~~\n");
+  printf("Function: %s\n", "peertable_refreshTimestamp");
+
+  peerTable_t* peertable = create_mock_peertable();
+  peerEntry_t* peer = peertable -> head;
+  sleep(1);
+
+  unsigned long timestamp = peer -> timestamp;
+
+  assert(peertable_refreshTimestamp(peer) == 1);
+  assert(timestamp != peer -> timestamp);
+  assert(peer -> timestamp == getCurrentTime());
+  peertable_destroy(peertable);
+  peertable = NULL;
+  printf("Successfully updated the timestamp.\n");
+
+  printf("SUCCESS!!\n");
+}
 
 //Main function to test all of the functions for the peer table.
 int main() {
 	test_peertable_init();
-  test_filetable_searchFileByName();
-  test_filetable_deleteFileEntryByName();
-  test_peertable_addEntry()
-  test_filetable_updateFile();
-
-  //DO NOT TEST
-  //filetable_printFileTable(fileTable_t* tablePtr)
-
+  test_peertable_createEntry();
+  test_peertable_searchEntryByIp();
+  test_peertable_addEntry();
+  test_peertable_deleteEntryByIp();
+  test_peertable_refreshTimestamp();
 }
