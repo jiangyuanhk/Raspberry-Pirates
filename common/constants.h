@@ -6,7 +6,7 @@
 
 //File Monitor
 #define MONITOR_POLL_INTERVAL 1
-=======
+
 #define HEARTBEAT_INTERVAL 30 // in seconds
 #define PIECE_LENGTH 999 // TODO: define it
 
