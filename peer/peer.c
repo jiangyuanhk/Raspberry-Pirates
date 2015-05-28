@@ -426,27 +426,27 @@ void* p2p_ManageDownloadFileFromOnePeer(){
     //     1. get the next piece (peek at the head of @pieceList), this is the piece we want to download now  (Node: 许多这层thread都可以 query 同一个@pieceList, 全都是从左到右)
     //     
     //     
-    //     1. send request to @sourceip (1.filename, 2. which piece to download )
+    //     1. request the piece from @sourceip (1.filename, 2. which piece to download )
     //     2. recv the requested piece from the @sourceip into a small buffer
     //          if SUCCESS, then write to the @tempFile (copy buffer --> @tempFile)
-    //          if FAILURE, then 
+    //          if FAILURE, then TODO:
     //          
     //          
-    //     3. remove this piece from @pieceList
+    //     3. remove this piece from @pieceList (update @pieceList)
     // 
     // 
-    // 
+    //      
     // 
     // 
     // }
-    //  
+    // 
+
 }
 
 
 
 
 
-void* p2p_ManageDownloadingPieceFromOnePeer()
 
 
 
