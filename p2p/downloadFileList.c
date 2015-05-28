@@ -3,14 +3,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "downloadList.h"
+#include "downloadFileList.h"
 #include "../common/constants.h"
-
-
-
-
 #include <pthread.h>
 
+
+//TODO: added mutex lock and unlock to all the operations
 
 DLL_t* DLL_initList(){
 

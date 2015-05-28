@@ -321,3 +321,132 @@ int main(){
   pthread_t p2p_listening_thread;
   pthread_create(&p2p_listening_thread, NULL, p2p_listening, &tracker_connection);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**** added by Yuan ******/
+
+
+
+//Need
+//  downloadlist -- peer's download list to keep track of all the files that are currently being downloaded
+//  fileTable -- peer side file Table
+//  
+//  
+//
+//
+//
+//
+//
+
+
+
+
+/* Thread to download a file from all available peers.  First establishes the connecting with a peer.
+   Then, sends a file_metadata_t to the peer to let it know the name of the file it needs to download.
+   Next, it receives a file_metadata_t from the peer to let it know its about to receive the data and containing 
+   information about the start and send_size as well as the file name.  Then, it receives the file and closes
+   the connection */
+void* p2p_download(void* arg) {
+  fileEntry_t* file = (fileEntry_t*) arg;
+
+  struct sockaddr_in servaddr;
+  servaddr.sin_family = FIlAF_INET;
+  servaddr.sin_addr.s_addr = inet_addr(file -> iplist[0]);      //just use the first ip in the list
+  servaddr.sin_port = htons(PTP_PORT);
+
+  int peer_conn = socket(AF_INET, SOCK_STREAM, 0);  
+
+  if(peer_conn < 0) {
+    printf("Error creating socket in p2p download.\n");
+    return -1;
+  }
+
+  if( connect(peer_conn, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0){
+    printf("Failed to connect ot local ON process.\n");
+    return -1;
+  }
+
+  printf("Connected to a peer upload thread.\n");
+
+
+  //for this file, Need to create and manage:
+  //      1. @providerList (file specific): keep track of active providers online
+  //      2. @pieceList (file specific): keep track of still-need pieces
+
+
+
+
+  //check if the filename is already in the @downloadFileList, if it is already being downloaded, then wait for a while and check again
+  
+
+  //if it is not yet being downloaded, then start to download it
+  // 1. add the file to the @downloadlist
+  // 2. create a pieceList to keep track of all the pieces needed for this particular file
+  // 
+         // query the fileTable to find the particular file (find by filename), fetch the iplist, and obtain one available (not in the providerList) ip (source peer) to download file from...
+         // if successfully picked one available source (sourceIP in the iplist ):
+         //   1. add it to the providerList
+         //   2. try to start a thead managing downloading this file from a particular peer (given IP address)
+         //   3. 
+
+
+
+
+}
+
+
+
+
+
+// need to know: 
+// 1. @filename to be downloaded
+// 2. the filesize of the file to be downloaded
+// 3  IP of the provider 
+// 4. master thread's: 
+//              1. @providerList
+//              2. @pieceList
+void* p2p_ManageDownloadFileFromOnePeer(){
+    // 1. parse the arg to get all the info we want
+    // 2. connect to the uploader (@sourceip)
+   
+    
+    // while(@pieceList is not empty):{
+    //     1. get the next piece (peek at the head of @pieceList), this is the piece we want to download now  (Node: 许多这层thread都可以 query 同一个@pieceList, 全都是从左到右)
+    //     
+    //     
+    //     1. send request to @sourceip (1.filename, 2. which piece to download )
+    //     2. recv the requested piece from the @sourceip into a small buffer
+    //          if SUCCESS, then write to the @tempFile (copy buffer --> @tempFile)
+    //          if FAILURE, then 
+    //          
+    //          
+    //     3. remove this piece from @pieceList
+    // 
+    // 
+    // 
+    // 
+    // 
+    // }
+    //  
+}
+
+
+
+
+
+void* p2p_ManageDownloadingPieceFromOnePeer()
+
+
+
