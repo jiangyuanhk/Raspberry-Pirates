@@ -118,7 +118,7 @@ int peertable_addEntry(peerTable_t* table, peerEntry_t* entry) {
  */
 int peertable_deleteEntryByIp(peerTable_t *table, char* ip) {
 
-	 if(table -> size == 0) return -1; //table is zero-size
+	if(table -> size == 0) return -1; //table is zero-size
 
   pthread_mutex_lock(table -> peertable_mutex);
   peerEntry_t* file = table -> head;
@@ -190,7 +190,7 @@ int peertable_deleteEntryByIp(peerTable_t *table, char* ip) {
 void peertable_destroy(peerTable_t *table) {
 	
 	// if there are entries in the table, free each of the entries
-	if(table -> size != 0){
+	if(table -> size != 0) {
 		
     pthread_mutex_lock(table -> peertable_mutex);
 		

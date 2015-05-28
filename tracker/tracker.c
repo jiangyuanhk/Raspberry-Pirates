@@ -152,7 +152,7 @@ void *handshake(void* arg){
 
 					}
 
-					iter = iter->pNext;
+					iter = iter -> next;
 				}
 
 				//for each file entry in tracker's fileTable
@@ -167,7 +167,7 @@ void *handshake(void* arg){
 						needBroadCast = 1;
 					}
 
-					iter = iter->pNext;
+					iter = iter -> next;
 				}
 
 
