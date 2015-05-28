@@ -207,18 +207,18 @@ void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs) {
 *@filename: name of the config file
 *
 */
-void readConfigFile(char* filename) {
+char* readConfigFile(char* filename) {
 	//set directory to the directory specified in the config file
-	//directory = 
 	FILE* config;
+	//TODO: not sure how globals are defined .. 
 	char buf[80];
 	if ((config = fopen(filename,"r")) == NULL) {
 		printf("Config file not found\n");
-		return;
+		return NULL;
 	}
 	if (fgets(buf, 79, config) == NULL) {
 		printf("No line read from config file\n");
-		return;
+		return NULL;
 	}
 	directory = calloc(1, strlen(buf) * sizeof(char));
 	strcpy(directory, buf);

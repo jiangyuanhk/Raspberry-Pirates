@@ -54,12 +54,12 @@ int FilesInfo_table_search(char* name, FileInfo_table* fItable);
 */
 void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs);
 /*
-*Reads the config file and stores the directory path
+*Reads the config file and returns the directory path as char*
 *
 *@filename: name of the config file
 *
 */
-void readConfigFile(char* filename);
+char* readConfigFile(char* filename);
 /*
 *frees global variables
 */
@@ -118,13 +118,7 @@ FileInfo_table* getAllFilesInfo();
 *@funcs: the functions to call based on the update's results
 */
 void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs);
-/*
-*Reads the config file and stores the directory path
-*
-*@filename: name of the config file
-*
-*/
-void readConfigFile(char* filename);
+
 /*
 *frees global variables
 */
