@@ -152,7 +152,7 @@ void *handshake(void* arg){
 
 					}
 
-					iter = iter->pNext;
+					iter = iter -> next;
 				}
 
 				//for each file entry in tracker's fileTable
@@ -167,7 +167,7 @@ void *handshake(void* arg){
 						needBroadCast = 1;
 					}
 
-					iter = iter->pNext;
+					iter = iter -> next;
 				}
 
 
@@ -324,7 +324,7 @@ void trackerStop() {
 			peerEntry_t* peerEntry = peertable_createEntry(pkt_recv.peer_ip, connfd);
 
 			// insert the new peerEntry into table (assert: no peer has same ip as this new peer before insertion)
-			assert(peertable_existPeer(myPeerTablePtr, peerEntry) == -1);
+			assert(peertable_searchEntryByIp(myPeerTablePtr, peerEntry -> ip) == NULL);
 			peertable_addEntry(myPeerTablePtr, peerEntry);
 
 			//create a pkt to send back to peer, for peer to set up itself

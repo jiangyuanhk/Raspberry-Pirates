@@ -1,3 +1,5 @@
+
+
 #include <pthread.h>
 #include "constants.h"
 
@@ -51,12 +53,6 @@ int peertable_deleteEntryByIp(peerTable_t *table, char* ip);
 // This method deletes the wheneverhole table, freeing memory, etc.
 // Returns 1 on success, -1 on failure.
 void peertable_destroy(peerTable_t *table);
-
-
-int peertable_existPeer(peerTable_t *table, peerEntry_t* entry);
-
-
-
 
 peerEntry_t* peertable_searchEntryByIp(peerTable_t* table, char* ip);
 
