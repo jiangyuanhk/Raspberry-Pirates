@@ -257,15 +257,37 @@ void* p2p_upload(void* arg) {
 }
 
 
-
-/* Thread to monitor local file changes.  When a file is changed locally, inform the tracker by sending the filetable
-  to the tracker.
+//--------------------File Monitor Callbacks-------------------------
+/* 
+* Callback methods for the File Monitor
+*@name: name of the file to modify
 */
-void* file_monitor_thread(void* arg){
-  //TODO Intergrate the file monitor logic from Daniel's File Monitor
-  pthread_exit(NULL);
+void Filetable_peerAdd(char* name) {
+  //create a new file entry for the updated file
+  filetable_appendFileEntry(filetable, newEntryPtr);
 }
+void Filetable_peerModify(char* name) {
+  fileEntry_t* oldEntryPtr = filetable_searchFileByName(filetable, name);
+  //create a new entry for the updated file
+  int ret = filetable_updateFile(oldEntryPtr, newEntryPtr, pthread_mutex_t* tablemutex);
 
+  if (ret) {
+    printf("File entry for %s modified\n", name);
+  }
+  else {
+    printf("Update failed: File entry for %s not found\n", name)
+  }
+}
+void Filetable_peerDelete(char* name) {
+  int ret = filetable_deleteFileEntryByName(filetable, name);
+  if (ret) {
+    printf("File entry for %s deleted\n", name);
+  }
+  else {
+    printf("File entry for %s not found\n", name)
+  }
+}
+//--------------------File Monitor Callbacks-------------------------
 void* keep_alive(void* arg) {
   int interval = *(int*) arg;
   while(1) {
@@ -308,6 +330,27 @@ int main(){
   printf("Receiving packet from the tracker.\n");
   printf("Inteval: %d  Piece Len: %d   FT-Size: %d \n", packet -> interval, packet -> piece_len, packet -> file_table_size);
   free(packet);
+
+  //--------------------File Monitor Thread-------------------------
+  void (*Add)(char *);
+  void (*Modify)(char *);
+  void (*Delete)(char *);
+
+  Add = &Filetable_peerAdd;
+  Modify = &Filetable_peerModify;
+  Delete = &Filetable_peerDelete;
+
+  localFileAlerts myFuncs = {
+    Add,
+    Modify,
+    Delete
+  };
+
+
+  pthread_t monitorthread;
+  pthread_create(&monitorthread, NULL, fileMonitorThread, (void*) &myFuncs);
+
+  //--------------------File Monitor Thread-------------------------
 
   //Start the keep alive thread
   pthread_t keep_alive_thread;
