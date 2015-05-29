@@ -1,4 +1,5 @@
-
+#ifndef PEER_TABLE_H
+#define PEER_TABLE_H
 
 #include <pthread.h>
 #include "constants.h"
@@ -31,9 +32,6 @@ typedef struct peer_peertable{
 }peerTable_t;
 
 
-
-
-
 // This initializes the peer table.
 peerTable_t* peertable_init();
 
@@ -43,9 +41,6 @@ peerEntry_t* peertable_createEntry(char* ip, int sockfd);
 
 int peertable_addEntry(peerTable_t *table, peerEntry_t* entry);
 
-
-
-
 // This method removes a table entry given the IP of the node to delete. Also fixes next pointers.
 // Returns 1 on success, -1 on failure.
 int peertable_deleteEntryByIp(peerTable_t *table, char* ip);
@@ -54,11 +49,11 @@ int peertable_deleteEntryByIp(peerTable_t *table, char* ip);
 // Returns 1 on success, -1 on failure.
 void peertable_destroy(peerTable_t *table);
 
+void peertable_printPeerTable(peerTable_t* peertable);
+
 peerEntry_t* peertable_searchEntryByIp(peerTable_t* table, char* ip);
-
-
 
 int peertable_refreshTimestamp(peerEntry_t* entry);
 
-
+#endif
 

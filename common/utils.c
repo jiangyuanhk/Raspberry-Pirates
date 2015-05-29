@@ -17,6 +17,7 @@
 #include <time.h>
 #include <math.h>
 
+#include "constants.h"
 
 /**
  * get the IP from Hostname, return 1 if success, return -1 if fails
@@ -42,12 +43,30 @@ int utils_getIPfromHostName(char* hostname, char *ip) {
     return -1;
 }
 
-
-
 unsigned long getCurrentTime(){
 	time_t curTime;
     curTime = time((time_t *)0);
     return (unsigned long) curTime;
+}
+
+// Function that gets the ip address for the local machine and saves it in the char * passed as a parameter.
+// Parameters: char* ip_address   -> char pointer where the ip address will be memcpy'ed to 
+// Returns: 1 if success, -1 if fails.
+int get_my_ip(char* ip_address) {
+  char hostname[MAX_HOSTNAME_SIZE];   
+  gethostname(hostname, MAX_HOSTNAME_SIZE); 
+  
+  struct hostent *host;
+  if ( (host = gethostbyname(hostname)) == NULL){
+    printf("Error! Could not get the ip address from the hostname.\n");
+    return -1;
+  }
+
+  //extract the ip address as a string from the hostent struct and memcpy into parameter
+  char* ip = inet_ntoa( *(struct in_addr *) host -> h_addr);
+  memcpy(ip_address, ip, IP_LEN);
+
+  return 1;
 }
 
 

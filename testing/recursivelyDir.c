@@ -3,10 +3,13 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <string.h>
-#include "../common/filetable.h"
+
 #include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "../common/filetable.h"
+
 
 
 
@@ -21,12 +24,10 @@ unsigned int getFilesize(const char* filename) {
 }
 
 
-
-
 int main(void)
 {
 
-  fileTable_t* myFileTablePtr =   filetable_init()  
+  fileTable_t* myFileTablePtr =  filetable_init();  
 
   
   DIR           *d;

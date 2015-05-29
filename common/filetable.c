@@ -21,6 +21,8 @@
 #include <sys/time.h>
 #include <time.h>
 #include <assert.h>
+#include <sys/stat.h>
+#include <dirent.h>
 
 #include "filetable.h"
 #include "peertable.h"
@@ -43,6 +45,21 @@ fileTable_t* filetable_init() {
 	tablePtr->filetable_mutex = mutex;
 
 	return tablePtr;
+}
+
+/*
+  Function to initialize a file entry.
+*/
+fileEntry_t * filetable_createFileEntry(char* filepath, int size, unsigned long int timestamp, int type){
+  fileEntry_t* entry = malloc(sizeof(fileEntry_t));
+  entry -> peerNum = 0;
+  entry -> file_type = type;
+  memset(entry -> file_name, 0, FILE_NAME_MAX_LEN);
+  memcpy(entry -> file_name, filepath, strlen(filepath) + 1);
+  entry -> size = size;
+  entry -> timestamp = timestamp;
+
+  return entry;
 }
 
 /**
@@ -213,12 +230,13 @@ void filetable_printFileTable(fileTable_t* tablePtr) {
 		time_t rawtime;
 		rawtime = iter->timestamp;
 		
-		printf("--filename: %s \tlastModifiedTime: %s\tfileSize: %u \tpeerIPs: ", 
-			iter -> file_name, ctime(&rawtime), iter->size);
+		printf("--filename: %s \ttype: %d\tlastModifiedTime: %s\tfileSize: %u \tpeerIPs: ", 
+			iter -> file_name, iter -> file_type, ctime(&rawtime), iter->size);
 		
 		int i = 0;
 		while (i < iter->peerNum) {
-			printf("%s \n", iter->iplist[0]);
+			printf("%s \n", iter->iplist[i]);
+      i++;
 		}
 
 		printf("\n");
@@ -277,7 +295,7 @@ int filetable_AddIp2Iplist(fileEntry_t* entry, char* peerip, pthread_mutex_t* ta
 
   //otherwise the ip did not exist before, so if there is additional space 
   //in the ip list, add the ip to the end of the list
-	if(i < MAX_PEER_NUM){
+	if(i < MAX_NUM_PEERS){
 		
 		strcpy(entry -> iplist[i], peerip);
 		entry -> peerNum++;
@@ -384,25 +402,93 @@ void filetable_destroy(fileTable_t *tablePtr){
 	return;
 }	
 
+
+void fill_filetable(fileTable_t* filetable, char *dir, char* prefix) {
+  DIR *dp;
+  struct dirent *entry;
+  struct stat statbuf;
+
+  if((dp = opendir(dir)) == NULL) {
+      fprintf(stderr,"cannot open directory: %s\n", dir);
+      return;
+  }
+  char* new_prefix = NULL;
+  chdir(dir);
+  while((entry = readdir(dp)) != NULL) {
+      lstat(entry->d_name,&statbuf);
+      if(S_ISDIR(statbuf.st_mode)) {
+          /* Found a directory, but ignore . and .. */
+          if(strcmp(".",entry->d_name) == 0 || 
+              strcmp("..",entry->d_name) == 0)
+              continue;
+
+          //get the file_path as a string
+          int path_len = strlen(prefix) + strlen("/") + strlen(entry -> d_name) + strlen("/") + 1;  // prefix + directory_name/termination_char            
+          char* path = malloc(path_len);
+          memset(path, 0, path_len);
+          sprintf(path, "%s/%s/", prefix, entry -> d_name);
+          
+          //add the entry to the file table
+          fileEntry_t* file_entry= filetable_createFileEntry(path, 0, (unsigned long int) statbuf.st_ctime, DIRECTORY);
+          filetable_appendFileEntry(filetable, file_entry);
+          free(path);
+
+          // Get the new prefix for the recursive call
+          int new_prefix_len = strlen(prefix) + strlen("/") + strlen(dir) + 1; 
+          new_prefix = (char *) malloc(new_prefix_len);
+          strcpy(new_prefix, prefix);
+          strcat(new_prefix, "/");
+          strcat(new_prefix, entry -> d_name);
+
+          // Recurse through the subdirectory
+          fill_filetable(filetable, entry->d_name, new_prefix);
+      }
+      else {
+        //get the file_path as a string
+        int path_len = strlen(prefix) + strlen("/") + strlen(entry -> d_name) + strlen("/") + 1;  // prefix + directory_name/termination_char            
+        char* path = malloc(path_len);
+        memset(path, 0, path_len);
+        sprintf(path, "%s/%s/", prefix, entry -> d_name);
+        
+        //add the entry to the file table
+        fileEntry_t* file_entry= filetable_createFileEntry(path, statbuf.st_size, (unsigned long int) statbuf.st_ctime, FILE);
+        filetable_appendFileEntry(filetable, file_entry);
+        free(path);
+      }
+  }
+  chdir("..");
+  if (new_prefix) free(new_prefix);
+  closedir(dp);
+}
+
+fileTable_t* create_local_filetable(char* root_dir) {
+  fileTable_t* filetable = filetable_init();
+  fill_filetable(filetable, root_dir, ".");
+  return filetable;
+}
+
 /******************** ARRAY <==========> LINKEDLIST CONVERSION ******************/
 
 /**
  * conver linkedlist of entries of in the table into continous chunk of array, for ease of sending
  * need to pass tablePtr because we want the tablesize and head/tail information together
  * @param  entry 	[head pointer of linked list of fileEntries in the table]
+ * @num             [number of file entries in the linked list]
+ * @tablemutex      [the mutex lock for the filetable]
  * @return          [array chunk]
  */
 char* filetable_convertFileEntriesToArray(fileEntry_t* entry, int num, pthread_mutex_t* tablemutex){
 	
 	pthread_mutex_lock(tablemutex);
 	//initialize the array
-	char* buf = (char*) malloc(num * sizeof(fileEntry_t));
+	char* buf = malloc(num * sizeof(fileEntry_t));
 
+  memset(buf, 0, num * sizeof(fileEntry_t));
 	fileEntry_t* iter = entry;
 	int i = 0;
 	while(iter != NULL){
 		//each time, copy size of fileEntry_t from iter to the array indentified by arrayHead
-		memcpy(buf + i * sizeof(fileEntry_t), iter, sizeof(fileEntry_t));
+		memcpy(&buf[i * sizeof(fileEntry_t)], iter, sizeof(fileEntry_t));
 		//go to next entry
 		iter = iter-> next;
 		i++;
@@ -410,10 +496,6 @@ char* filetable_convertFileEntriesToArray(fileEntry_t* entry, int num, pthread_m
 	pthread_mutex_unlock(tablemutex);
 	return buf;
 }
-
-
-
-
 
 /**
  * convert received buffer back to a list of fileEntries struct
@@ -424,26 +506,51 @@ char* filetable_convertFileEntriesToArray(fileEntry_t* entry, int num, pthread_m
  */
 fileEntry_t* filetable_convertArrayToFileEntires(char* buf, int num){
 
+  if (num < 1) return NULL;
 
-	//create a dummy head first
-	fileEntry_t* dummy = (fileEntry_t*) malloc(sizeof(fileEntry_t));
-	dummy->next = NULL;
+	//create and read in the head of the list first
+	fileEntry_t* head = (fileEntry_t*) malloc(sizeof(fileEntry_t));
+  memcpy(head, buf, sizeof(fileEntry_t));
+  head -> next = NULL;
 
-	//iterator points to dummy at first
-	fileEntry_t* iter = dummy;
+  //read in the rest of the entries, adding them to the SLL with the head at the start
+  fileEntry_t* prev = head;
+  fileEntry_t* curr;
 
-	//create entries one by one
 	int i;
-	for(i = 0; i < num; i++){
-		//create an entry
-		fileEntry_t* entry = (fileEntry_t*) malloc(sizeof(fileEntry_t));
-		memcpy(entry, buf + i * sizeof(fileEntry_t), sizeof(fileEntry_t));
-		entry -> next = NULL;
-		iter -> next = entry;
-		iter = entry -> next;
+	for(i = 1; i < num; i++) {
+		curr = malloc(sizeof(fileEntry_t));
+		memcpy(curr, buf + i * sizeof(fileEntry_t), sizeof(fileEntry_t));
+    curr -> next = NULL;
+    prev -> next = curr;
+    prev = curr;
 	}
 
-	return dummy -> next;
+	return head;
+}
+
+/**
+ * Convert entries into a file table.
+ * NULL if buffer is empty
+ * @param  head_file [the first file in a linked list of files to convert into a file table]
+ * @return     [filetable pointer]
+ */
+fileTable_t* filetable_convertEntriesToFileTable(fileEntry_t* head_file) {
+
+  fileTable_t* filetable = filetable_init();
+  
+  fileEntry_t* entry = head_file;
+
+  //loop through each entry and add it to the table
+  while (entry != NULL) {
+    filetable_appendFileEntry(filetable, entry);
+    entry = entry -> next;
+  }
+
+  //make sure the tail has a next of NULL
+  filetable -> tail -> next = NULL;
+
+	return filetable;
 }
 
 

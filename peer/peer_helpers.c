@@ -4,8 +4,9 @@
 //
 //Date: May 22, 2015
 
-#include <stdio.h>
+
 #include <stdlib.h>
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -18,72 +19,53 @@
 #include <pthread.h>
 #include <unistd.h>
 
+
 #include "peer_helpers.h"
 #include "../common/constants.h"
-#include "../common/pkt.h"
+
 
 #define BUFFER_SIZE 1500
 
-// Function that gets the ip address for the local machine and saves it in the char * passed as a parameter.
-// Parameters: char* ip_address   -> char pointer where the ip address will be memcpy'ed to 
-// Returns: 1 if success, -1 if fails.
-int get_my_ip(char* ip_address) {
-  char hostname[MAX_HOSTNAME_SIZE];   
-  gethostname(hostname, MAX_HOSTNAME_SIZE); 
+// // Function that gets the ip address for the local machine and saves it in the char * passed as a parameter.
+// // Parameters: char* ip_address   -> char pointer where the ip address will be memcpy'ed to 
+// // Returns: 1 if success, -1 if fails.
+// int get_my_ip(char* ip_address) {
+//   char hostname[MAX_HOSTNAME_SIZE];   
+//   gethostname(hostname, MAX_HOSTNAME_SIZE); 
   
-  struct hostent *host;
-  if ( (host = gethostbyname(hostname)) == NULL){
-    printf("Error! Could not get the ip address from the hostname.\n");
-    return -1;
-  }
+//   struct hostent *host;
+//   if ( (host = gethostbyname(hostname)) == NULL){
+//     printf("Error! Could not get the ip address from the hostname.\n");
+//     return -1;
+//   }
 
-  //extract the ip address as a string from the hostent struct and memcpy into parameter
-  char* ip = inet_ntoa( *(struct in_addr *) host -> h_addr);
-  memcpy(ip_address, ip, IP_LEN);
+//   //extract the ip address as a string from the hostent struct and memcpy into parameter
+//   char* ip = inet_ntoa( *(struct in_addr *) host -> h_addr);
+//   memcpy(ip_address, ip, IP_LEN);
 
-  return 1;
-}
-
-// Function that sends a register packet upon first login.
-int send_register_packet(int tracker_conn) {
-  ptp_peer_t* packet = calloc(1, sizeof(ptp_peer_t));
-  packet -> protocol_len = sizeof(ptp_peer_t);
-  memcpy(packet -> protocol_name, "P2T Protocol", 30);
-  packet -> type = REGISTER;
-  get_my_ip(packet-> peer_ip);
-  packet -> port = P2P_PORT;
-  packet -> file_table_size = 21;
-
-  if (send_pkt_peer_to_tracker(packet, tracker_conn) < 0){
-    free(packet);
-    printf("Error sending the register packet\n");
-    return -1;
-  }
-  free(packet);
-  return 1;
-}
+//   return 1;
+// }
 
 
 
-int send_keep_alive_packet(int file_table_size) { //need a table size as well
-  ptp_peer_t* packet = calloc(1, sizeof(ptp_peer_t));
-  packet -> protocol_len = sizeof(ptp_peer_t);
-  memcpy(packet -> protocol_name, "P2T Protocol", 30);
-  packet -> type = KEEP_ALIVE;
-  get_my_ip(packet-> peer_ip);
-  packet -> port = P2P_PORT;
-  packet -> file_table_size = 21;
-  //peer table file table
+// int send_keep_alive_packet(int file_table_size, int tracker_conn) { //need a table size as well
+//   ptp_peer_t* packet = calloc(1, sizeof(ptp_peer_t));
+//   packet -> type = KEEP_ALIVE;
+//   get_my_ip(packet-> peer_ip);
+//   packet -> port = P2P_PORT;
+//   packet -> filetablesize = file_table_size;
+//   //TODO factor in the file table that will be sent as an array
+//   //peer table file table
 
-  if (send_pkt_peer_to_tracker(packet, tracker_conn) < 0){
-    free(packet);
-    printf("Error sending the register packet\n");
-    return -1;
-  }
+//   if (send(tracker_conn, packet, sizeof(ptp_peer_t), 0) < 0) {
+//     free(packet);
+//     printf("Error sending the register packet\n");
+//     return -1;
+//   }
 
-  free(packet);
-  return 1;
-}
+//   free(packet);
+//   return 1;
+// }
 
 //Function that, given a filepath, returns the size of the file.
 int get_file_size(char* filepath) {
@@ -202,5 +184,7 @@ int send_data_p2p(int peer_conn, file_metadata_t* metadata) {
   fclose(fp);
   return 1;
 }
+
+
 
 

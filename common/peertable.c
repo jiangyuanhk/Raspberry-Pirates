@@ -212,6 +212,31 @@ void peertable_destroy(peerTable_t *table) {
 }
 
 /**
+ * Prints out a peer table
+ * @param  tablePtr     [pointer to the fileTable]
+ */
+void peertable_printPeerTable(peerTable_t* peertable) {
+  peerEntry_t* iter = peertable->head;
+  printf("PEERTABLE:        Size: %d\n", peertable -> size);
+  printf("==========================\n");
+  
+  while(iter != NULL) {
+    //print out information
+    time_t rawtime;
+    rawtime = iter -> timestamp;
+
+    printf("--ip: %s\tTimestamp: %s sockfd: %d", 
+      iter -> ip, ctime(&rawtime), iter->sockfd);
+    
+    printf("\n");
+    iter = iter-> next;
+  }
+  printf("=========================\n");
+
+}
+
+
+/**
  * Refresh the peerEntry's timestamp to latest time
  * @param  entry [the entry whose timestamp will be updated]
  * @return       [1 if successful, -1 if fail]
