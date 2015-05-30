@@ -318,6 +318,11 @@ void* file_monitor(void* arg) {
       // if the updated_file is null, the old file is not in the table so must have been deleted
       if(updated_file == NULL) {
         printf("File deleted.  Local file tree has changed:%s\n", file -> file_name);
+        
+        //about to free the memory for th efile_name so need to keep the name
+        char name[FILE_NAME_MAX_LEN];
+        memset(name, 0, FILE_NAME_MAX_LEN);
+        memcpy(name, file -> file_name, FILE_NAME_MAX_LEN);
 
         filetable_deleteFileEntryByName(filetable, file -> file_name);
 
