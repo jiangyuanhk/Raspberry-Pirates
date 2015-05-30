@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 
 #include "peer.h"
+#include "file_monitor.h"
 #include "../common/constants.h"
 #include "../common/pkt.h"
 #include "../common/filetable.h"
@@ -34,9 +35,13 @@ int tracker_connection;     // socket connection between peer and tracker so can
 int heartbeat_interval;
 int piece_len;
 
-fileTable_t* filetable;     //local file table to keep track of files in the directory
-peerTable_t* peertable;     //peer table to keep track of ongoing downloading tasks
+// char ignore_list[MAX_NUM_PEERS*MAX_NUM_PEERS][FILE_NAME_MAX_LEN];
 
+char* directory;
+fileTable_t* filetable;         //local file table to keep track of files in the directory
+peerTable_t* peertable;         //peer table to keep track of ongoing downloading tasks
+blockList_t* update_blocklist;  //add and update block list
+blockList_t* delete_blocklist;  //delete block list
 
 //Function to connect the peer to the tracker on the HANDSHAKE Port.
 // Returns -1 if it failed to connect.  Otherwise, returns the sockfd
@@ -93,6 +98,7 @@ void* tracker_listening(void* arg) {
     filetable_printFileTable(tracker_filetable);
     //loop through the master file table to see which files need to be synchronized locally
     fileEntry_t* file = tracker_filetable -> head;
+    
     while (file != NULL) {
 
       //check to see if the file exists locally
@@ -102,6 +108,8 @@ void* tracker_listening(void* arg) {
       if(local_file == NULL || (file -> timestamp) > (local_file -> timestamp) ) { 
         printf("File updated or added.  Need to download file: %s\n", file -> file_name);
         // //TODO make sure that the file is not already being downloaded and if not, add to the peer table
+        // //TODO add to the update-add table
+        // add_file_to_blocklist(update_blocklist, file -> file_name);
         // pthread_t p2p_download_thread;
         // pthread_create(&p2p_download_thread, NULL, p2p_download, file);
       }
@@ -120,16 +128,18 @@ void* tracker_listening(void* arg) {
       //if the file is not in the master file table and is locally, then delete it
       if (master_file == NULL) {
 
-         if( remove(file -> file_name) == 0) {
+        //add file to ignore list
+        add_file_to_blocklist(delete_blocklist, file -> file_name);
+
+        if( remove(file -> file_name) == 0) {
           printf("Successfully removed the file in filesystem: %s \n", file -> file_name);
           file = file -> next;
-          filetable_deleteFileEntryByName(filetable, file -> file_name);
-         }
+        }
 
-         else{
+        else {
           file = file -> next;
           printf("Error in removing the file from the file system.\n");
-         }
+        }
       }
       file = file -> next;
     }
@@ -277,6 +287,9 @@ void* file_monitor(void* arg) {
   printf("Starting the File Monitor Thread.\n");
   printf("Sending the Initial Filetable\n");
 
+  printf("File Table We Are Sending\n");
+  filetable_printFileTable(filetable);
+  
   pthread_mutex_lock(filetable -> filetable_mutex);
   ptp_peer_t* pkt = pkt_create_peerPkt();
   char ip_address[IP_LEN];
@@ -286,12 +299,113 @@ void* file_monitor(void* arg) {
   pkt_peer_sendPkt(tracker_connection, pkt, filetable -> filetable_mutex);
   printf("Successfully send the filetable packet.\n");
 
+  while(1) {
+    sleep(MONITOR_POLL_INTERVAL);
 
-    // fileTable_t* peer_filetable = filetable_convertEntriesToFileTable(pkt_recv.filetableHeadPtr);
-    // filetable_printFileTable(peer_filetable);
-  //keep looping and use the file monitor thing daneil did
+    fileTable_t* updated_filetable = create_local_filetable(directory);
+    printf("Directory: %s\n", directory);
+    printf("Updated Filetable\n");
+    filetable_printFileTable(updated_filetable);
+    int need_to_update = 0;
+    
+    //loop through the old filetable and see if files are outdated or been deleted
+    fileEntry_t* file = filetable -> head;
+    while (file != NULL) {
 
-  //TODO Intergrate the file monitor logic from Daniel's File Monitor
+      //check to see if the file exists locally
+      fileEntry_t* updated_file = filetable_searchFileByName(updated_filetable, file -> file_name); 
+      
+      // if the updated_file is null, the old file is not in the table so must have been deleted
+      if(updated_file == NULL) {
+        printf("File deleted.  Local file tree has changed:%s\n", file -> file_name);
+
+        filetable_deleteFileEntryByName(filetable, file -> file_name);
+
+        //if its in the blocklist, do not need to update and remove from blocklist
+        if ( find_in_blocklist(delete_blocklist, file -> file_name) == 1){
+          printf("In block list. Ignoring change.\n");
+          remove_from_blocklist(delete_blocklist, file -> file_name);
+        }
+
+        //otherwise not in the blocklist and need to update
+        else {
+          printf("Need to send update.\n");
+          need_to_update = 1;
+        }
+      } 
+
+      //if the updated file exists but has a newer timestamp, the old file is outdated and needs to be updated
+      else if ( (updated_file -> timestamp) > (file -> timestamp) ) { 
+        printf("File outdated.  Local file tree has changed: %s \n", file -> file_name);
+        
+        filetable_updateFile(file, updated_file, filetable -> filetable_mutex);
+
+        //if its in the blocklist, do not need to update and remove from blocklist
+        if ( find_in_blocklist(update_blocklist, file -> file_name) == 1){
+          printf("In block list. Ignoring change and updating filetable.\n");
+          remove_from_blocklist(update_blocklist, file -> file_name);
+        }
+
+        //otherwise not in the blocklist and need to update
+        else {
+          printf("Need to send update.\n");
+          need_to_update = 1;
+        }
+      }
+
+      file = file -> next;  //move to next item in file table from tracker
+    }
+
+    fileEntry_t* updated_file = updated_filetable -> head;
+
+    //if do not need to update, loop through updated filetable and see if new files have been added
+    while (updated_file != NULL && !need_to_update) {
+
+      //check to see if the file previously existed.
+      fileEntry_t* old_file = filetable_searchFileByName(filetable, updated_file -> file_name);
+      
+      // if the old file is NULL, the updated file is new and has been added
+      if(old_file == NULL) {
+        printf("File added.  Local file tree has changed.\n");
+        
+        //copy the file entry into a new file entry and add to the file table
+        fileEntry_t* new_entry = malloc(sizeof(fileEntry_t));
+        memcpy(new_entry, updated_file, sizeof(fileEntry_t));  
+        new_entry -> next = NULL;      
+        filetable_appendFileEntry(filetable, new_entry);
+
+        //if its in the blocklist, do not need to update and remove from blocklist
+        if ( find_in_blocklist(update_blocklist, updated_file -> file_name) == 1){
+          printf("In block list. Ignoring change and updating filetable.\n");
+          remove_from_blocklist(update_blocklist, updated_file -> file_name);
+        }
+
+        //otherwise not in the blocklist and need to update
+        else {
+          printf("Need to send update.\n");
+          need_to_update = 1;
+        }
+      }
+      updated_file = updated_file -> next;
+    }
+
+    //if need to update, send the filetable to the tracker
+    if (need_to_update) {
+      printf("Sending Tracker the updated filetable.\n");
+      pthread_mutex_lock(filetable -> filetable_mutex);
+      ptp_peer_t* pkt = pkt_create_peerPkt();
+      char ip_address[IP_LEN];
+      get_my_ip(ip_address);
+      pkt_config_peerPkt(pkt, FILE_UPDATE, ip_address, HANDSHAKE_PORT, filetable -> size, filetable -> head);
+      pthread_mutex_unlock(filetable -> filetable_mutex);
+      pkt_peer_sendPkt(tracker_connection, pkt, filetable -> filetable_mutex);
+      printf("Successfully send the filetable packet.\n");
+    }
+
+
+  }
+
+
   pthread_exit(NULL);
 }
 
@@ -308,14 +422,38 @@ void* keep_alive(void* arg) {
 }
 
 
-int main(){
+int main(int argc, char *argv[]) {
+
   
-  //Initialize the local filetable to include current directory and subdirectories
-  filetable = create_local_filetable(".");
+  //Initialize the directory to sync
+  printf("Read in config file to get directory.\n");
+  directory = read_config_file("config");
+
+  if (directory == NULL) {
+    printf("Error reading the config file.\n");
+    exit(1);
+  }
+
+  char cwd[1024];
+  if (getcwd(cwd, sizeof(cwd)) != NULL)
+    printf("Current working dir: %s\n", cwd);
+  
+  printf("Successfully read in config file.\n");
+
+  //Create the local file table
+  filetable = create_local_filetable(directory);
   filetable_printFileTable(filetable);
 
+  char cwd1[1024];
+  if (getcwd(cwd1, sizeof(cwd1)) != NULL)
+    printf("Current working dir: %s\n", cwd1);
+
+
   //Initialize the peer table as empty
-  peerTable_t* peertable = malloc(sizeof(peerTable_t)); 
+  peertable = malloc(sizeof(peerTable_t)); 
+
+  update_blocklist = blocklist_init();
+  delete_blocklist = blocklist_init();
 
   //Attempt to establish connection with tracker
   if ( (tracker_connection = connect_to_tracker()) < 0) {

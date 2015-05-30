@@ -37,6 +37,8 @@ int svr_sd; // tracker side socket binded with HANDSHAKE_PORT
  */
 void broadcastFileTable() {
  	printf("Broadcasting File Table to %d Peers\n", myPeerTablePtr -> size);
+  printf("This is the file table we will be sending\n");
+  filetable_printFileTable(myFileTablePtr);
 	//create a pkt to broadcast
  	ptp_tracker_t* broadcast = pkt_create_trackerPkt(); 
  	// config reponse
@@ -200,6 +202,7 @@ void *handshake(void* arg){
 
 			}
 			case REGISTER:
+        sleep(5);
         printf("Received a register packet!\n");
 				printf("%s: error: aren't suppposed to receive REGISTER here\n", __func__);
 				break;
@@ -240,10 +243,6 @@ void* monitorAlive(void* arg){
 
 	}
 }
-
-
-
-
 
 
 //create a particular server socket using given port number

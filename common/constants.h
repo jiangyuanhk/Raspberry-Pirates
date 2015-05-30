@@ -7,6 +7,11 @@
 #define MAX_NUM_PEERS 10
 #define MAX_FILEPATH_LEN 300
 
+
+#define HEARTBEAT_INTERVAL 30 // in seconds
+#define PIECE_LENGTH 999 // TODO: define it
+#define HANDSHAKE_PORT 3409
+
 //Tracker Constants
 #define MONITOR_ALIVE_INTERVAL 1000			//TODO
 #define DEAD_PEER_TIMEOUT 1000				//TODO
@@ -20,11 +25,6 @@
 
 //File Monitor
 #define MONITOR_POLL_INTERVAL 1
-
-#define HEARTBEAT_INTERVAL 30 // in seconds
-#define PIECE_LENGTH 999 // TODO: define it
-
-#define HANDSHAKE_PORT 3409
 
 
 #endif

@@ -4,7 +4,7 @@
 #include "constants.h"
 #include <pthread.h>
 
-#define FILE 0
+#define REGULAR_FILE 0
 #define DIRECTORY 1
 
 /**
@@ -56,7 +56,7 @@ int filetable_updateFile(fileEntry_t* oldEntryPtr, fileEntry_t* newEntryPtr, pth
 
 void filetable_destroy(fileTable_t *tablePtr);
 
-fileTable_t* create_local_filetable(char* root_dir);
+//fileTable_t* create_local_filetable(char* root_dir);
 
 int filetable_AddIp2Iplist(fileEntry_t* entry, char* peerip, pthread_mutex_t* tablemutex);
 
