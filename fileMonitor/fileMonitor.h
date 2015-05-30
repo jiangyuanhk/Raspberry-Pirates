@@ -38,13 +38,16 @@ typedef struct {
 */
 void *fileMonitorThread(void* arg);
 /*
+*Signals the file monitor to close
+*/
+void FileMonitor_close();
+/*
 *Gets the file info for a given filename
 *
 *@filename:the filename to return info for
 *
 *Returns a FileInfo struct
 */
-
 FileInfo getFileInfo(char* filename);
 /*
 *Gets a table of file info for the directory
@@ -74,12 +77,72 @@ void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs);
 *@filename: name of the config file
 *
 */
-char* readConfigFile(char* filename);
+void readConfigFile(char* filename);
 /*
 *frees global variables
 */
 void FileMonitor_freeAll();
-
+/*
+* Adds a file from the block list
+*
+*@toAppend: the item to be added
+*
+*/
+void FileBlockList_Append(FileBlockList* toAppend);
+/*
+* Finds a file and event int the block list
+*
+*@filepath: name and path of the file
+*@event: the specific event to remove
+*
+*returns 0 on not found, and 1 on found
+*/
+int FileBlockList_Search(char* filepath, int event);
+/*
+* Removes a file from the block list
+*
+*@filepath: name and path of the file
+*@event: the specific event to remove
+*
+*returns 0 on failure, 1 on success
+*/
+int FileBlockList_Remove(char* filepath, int event);
+/*
+*Blocks a file from being added
+*
+*@filename: the name of the file excluding the directory name
+*/
+void blockFileAddListening(char* filename);
+/*
+*Blocks a file from being updated
+*
+*@filename: the name of the file excluding the directory name
+*/
+void blockFileWriteListening(char* filename);
+/*
+*Blocks a file from being deleted
+*
+*@filename: the name of the file excluding the directory name
+*/
+void blockFileDeleteListening(char* filename);
+/*
+*unblocks a file from being added
+*
+*@filename: the name of the file excluding the directory name
+*/
+int unblockFileAddListening(char* filename);
+/*
+*unblocks a file from being updated
+*
+*@filename: the name of the file excluding the directory name
+*/
+int unblockFileWriteListening(char* filename);
+/*
+*unblocks a file from being deleted
+*
+*@filename: the name of the file excluding the directory name
+*/
+int unblockFileDeleteListening(char* filename);
 /*
 *Prints a FileInfo_table for testing
 *

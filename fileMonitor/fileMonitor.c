@@ -33,6 +33,7 @@ void *fileMonitorThread(void* arg) {
 	//cast args to be the function pointers given by the client
 	localFileAlerts* funcs = (localFileAlerts*)arg;
 
+	blockList = NULL;
 	//read the config file for necessary information
 	readConfigFile("./config");
 
@@ -46,9 +47,6 @@ void *fileMonitorThread(void* arg) {
 
 	//fill in the first table
 	ftable = getAllFilesInfo();
-	blockList = calloc(1, sizeof(blockList));
-
-	FileInfo_table_print(ftable);
 
 	int i;
 	for(i = 0; i < ftable->num_files; i++) {
@@ -58,6 +56,8 @@ void *fileMonitorThread(void* arg) {
 	sleep(MONITOR_POLL_INTERVAL);
 
 	while(running) {
+		//print table for testing
+		FileInfo_table_print(ftable);
 		//get the updated table
 		FileInfo_table* newtable = getAllFilesInfo();
 		//get a comparison and call the necessary functions
@@ -65,8 +65,6 @@ void *fileMonitorThread(void* arg) {
 		//set ftable to the updated version
 		free(ftable);
 		ftable = newtable;
-		//print table for testing
-		FileInfo_table_print(ftable);
 		//wait a set interval time before checking the directory again
 		sleep(MONITOR_POLL_INTERVAL);
 	}
@@ -114,6 +112,7 @@ FileInfo getFileInfo(char* filename) {
 *Returns a FileInfo_table pointer
 */
 FileInfo_table* getAllFilesInfo() {
+	char* extension;
 	int num_files = 0;
 	//http://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
 	DIR *dir;
@@ -125,6 +124,13 @@ FileInfo_table* getAllFilesInfo() {
 			sprintf(filepath, "%s%s", directory, ent->d_name);
 			stat(filepath, &entinfo);
 			if(S_ISREG(entinfo.st_mode)) {
+				extension = strrchr(ent->d_name, '.');
+				if(extension) {
+					if(strcmp(extension, ".swp") == 0) {
+						free(filepath);
+						continue;
+					}
+				}
 				num_files++;
 			}
 			free(filepath);
@@ -147,6 +153,13 @@ FileInfo_table* getAllFilesInfo() {
 			sprintf(filepath, "%s%s", directory, ent->d_name);
 			stat(filepath, &entinfo);
 			if(S_ISREG(entinfo.st_mode)) {
+				extension = strrchr(ent->d_name, '.');
+				if(extension) {
+					if(strcmp(extension, ".swp") == 0) {
+						free(filepath);
+						continue;
+					}
+				}
 				allfiles->table[idx] = getFileInfo(ent->d_name);
 				idx++;
 			}
@@ -189,24 +202,42 @@ int FilesInfo_table_search(char* name, FileInfo_table* fItable) {
 */
 void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs) {
 	char* filepath;
+	char* filename;
 
 	int i;
 	int idx;
 	for(i = 0; i < ftable->num_files; i++) {
-		filepath = ftable->table[i].filepath;
-		if(FilesInfo_table_search(filepath, newtable) == -1 && !FileBlockList_search(filepath, EVENT_DELETED)) {
+
+		filename = ftable->table[i].filepath;
+		filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
+		sprintf(filepath, "%s%s", directory, filename);
+
+		if(FilesInfo_table_search(filename, newtable) == -1 && !FileBlockList_Search(filepath, EVENT_DELETED)) {
+			printf("File deleted: %s\n",filename);
 			funcs->fileDeleted(filepath);
+		}
+		else {
+			free(filepath);
 		}
 	}
 
 	for(i = 0; i < newtable->num_files; i++) {
-		filepath = newtable->table[i].filepath;
-		idx = FilesInfo_table_search(filepath, ftable);
-		if(idx == -1 && !FileBlockList_search(filepath, EVENT_ADDED)) {
+		
+		filename = newtable->table[i].filepath;
+		char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
+		sprintf(filepath, "%s%s", directory, filename);
+
+		idx = FilesInfo_table_search(filename, ftable);
+		if(idx == -1 && !FileBlockList_Search(filepath, EVENT_ADDED)) {
+			printf("File added: %s\n",filename);
 			funcs->fileAdded(filepath);
 		}
-		else if (ftable->table[idx].lastModifyTime != newtable->table[i].lastModifyTime  && !FileBlockList_search(filepath, EVENT_MODIFIED)) {
+		else if (ftable->table[idx].lastModifyTime != newtable->table[i].lastModifyTime  && !FileBlockList_Search(filepath, EVENT_MODIFIED)) {
+			printf("File updated: %s\n",filename);
 			funcs->fileModified(filepath);
+		}
+		else {
+			free(filepath);
 		}
 	}
 
@@ -224,30 +255,227 @@ void readConfigFile(char* filename) {
 	char buf[80];
 	if ((config = fopen(filename,"r")) == NULL) {
 		printf("Config file not found\n");
-		return NULL;
+		return;
 	}
 	if (fgets(buf, 79, config) == NULL) {
 		printf("No line read from config file\n");
-		return NULL;
+		return;
 	}
 	directory = calloc(1, strlen(buf) * sizeof(char));
 	strcpy(directory, buf);
 	fclose(config);
 }
-
+/*
+* Frees the global variables
+*/
 void FileMonitor_freeAll() {
+	//Free the file info table
+	int i;
+	for(i = 0; i < ftable->num_files; i++) {
+		free(ftable->table[i].filepath);
+	}
+	free(ftable->table);
 	free(ftable);
+	//free the directory string
 	free(directory);
-	free(blockList);
+	//Free the block list
+	FileBlockList* toFree = blockList;
+	FileBlockList* next = blockList->next;
+	if (toFree) {
+		while(next) {
+			free(toFree->filepath);
+			free(toFree);
+			toFree = next;
+			next = next->next;
+		} 
+		free(toFree->filepath);
+		free(toFree);
+	}
+	else {
+		free(blockList);
+	}
 }
-
-void blockFileAddListenning(char* filename) {
+/*
+* Adds a file from the block list
+*
+*@toAppend: the item to be added
+*
+*/
+void FileBlockList_Append(FileBlockList* toAppend) {
+	FileBlockList* curr = blockList;
+	if(!curr) {
+		blockList = toAppend;
+	}
+	else {
+		while(curr->next) {
+			curr = blockList->next;
+		}
+		curr->next = toAppend;
+	}
+}
+/*
+* Finds a file and event int the block list
+*
+*@filepath: name and path of the file
+*@event: the specific event to remove
+*
+*returns 0 on not found, and 1 on found
+*/
+int FileBlockList_Search(char* filepath, int event) {
+	FileBlockList* curr = blockList;
+	if(!curr) {
+		return 0;
+	}
+	while(curr->next) {
+		if(strcmp(filepath, curr->filepath) == 0) {
+			if(curr->event == event) {
+				return 1;
+			}
+		}
+		curr = curr->next;
+	}
+	if(strcmp(filepath, curr->filepath) == 0) {
+		if(curr->event == event) {
+			return 1;
+		}
+	}
+	return 0;
+}
+/*
+* Removes a file from the block list
+*
+*@filepath: name and path of the file
+*@event: the specific event to remove
+*
+*returns 0 on failure, 1 on success
+*/
+int FileBlockList_Remove(char* filepath, int event) {
+	FileBlockList* prev = NULL;
+	FileBlockList* curr = blockList;
+	int ret = 0;
+	if(!curr) {
+		return ret;
+	}
+	while(curr) {
+		if(strcmp(filepath, curr->filepath) == 0) {
+			if(curr->event == event) {
+				if(prev) {
+					prev->next = curr->next;
+					free(curr->filepath);
+					free(curr);
+				}
+				else {
+					blockList = curr->next;
+					free(curr->filepath);
+					free(curr);
+				}
+				ret = 1;
+				break;
+			}
+		}
+		prev = curr;
+		curr = curr->next;
+	}
+	free(filepath);
+	return ret;
+}
+/*
+*Blocks a file from being added
+*
+*@filename: the name of the file excluding the directory name
+*/
+void blockFileAddListening(char* filename) {
 	
 	char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
 	sprintf(filepath, "%s%s", directory, filename);
 
+	FileBlockList* blockAdd = calloc(1, sizeof(FileBlockList));
+	blockAdd->filepath = filepath;
+	blockAdd->event = EVENT_ADDED;
 
 
+	FileBlockList_Append(blockAdd);
+
+}
+/*
+*Blocks a file from being updated
+*
+*@filename: the name of the file excluding the directory name
+*/
+void blockFileWriteListening(char* filename) {
+	
+	char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
+	sprintf(filepath, "%s%s", directory, filename);
+
+	FileBlockList* blockWrite = calloc(1, sizeof(FileBlockList));
+	blockWrite->filepath = filepath;
+	blockWrite->event = EVENT_MODIFIED;
+
+
+	FileBlockList_Append(blockWrite);
+
+}
+/*
+*Blocks a file from being deleted
+*
+*@filename: the name of the file excluding the directory name
+*/
+void blockFileDeleteListening(char* filename) {
+	
+	char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
+	sprintf(filepath, "%s%s", directory, filename);
+
+	FileBlockList* blockDelete = calloc(1, sizeof(FileBlockList));
+	blockDelete->filepath = filepath;
+	blockDelete->event = EVENT_DELETED;
+
+
+	FileBlockList_Append(blockDelete);
+
+}
+/*
+*unblocks a file from being added
+*
+*@filename: the name of the file excluding the directory name
+*/
+int unblockFileAddListening(char* filename) {
+	
+	char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
+	sprintf(filepath, "%s%s", directory, filename);
+
+	int event = EVENT_ADDED;
+
+	return FileBlockList_Remove(filepath, event);
+
+}
+/*
+*unblocks a file from being updated
+*
+*@filename: the name of the file excluding the directory name
+*/
+int unblockFileWriteListening(char* filename) {
+	
+	char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
+	sprintf(filepath, "%s%s", directory, filename);
+
+	int event = EVENT_MODIFIED;
+
+	return FileBlockList_Remove(filepath, event);
+
+}
+/*
+*unblocks a file from being deleted
+*
+*@filename: the name of the file excluding the directory name
+*/
+int unblockFileDeleteListening(char* filename) {
+	
+	char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
+	sprintf(filepath, "%s%s", directory, filename);
+
+	int event = EVENT_DELETED;
+
+	return FileBlockList_Remove(filepath, event);
 
 }
 /*
@@ -259,7 +487,7 @@ void FileInfo_table_print(FileInfo_table* toPrint) {
 	printf("This file table has %d files. These files are as follows:\n\n", toPrint->num_files);
 	int i;
 	for(i = 0; i < toPrint->num_files; i++) {
-		printf("\tFile Name: %s\t|\tFile Size: %d\n", toPrint->table[i].filepath, toPrint->table[i].size);
+		printf("\tFile Name: %.16s\t\t|\tFile Size: %d\n", toPrint->table[i].filepath, toPrint->table[i].size);
 	}
 	printf("\n\n");
 }

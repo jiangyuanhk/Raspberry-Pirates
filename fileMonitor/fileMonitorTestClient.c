@@ -16,15 +16,15 @@
 
 
 void printAdd(char* name) {
-	printf("File %s added\n", name);
+	printf("File %s successfully added\n", name);
 }
 
 void printModify(char* name) {
-	printf("File %s modified\n", name);
+	printf("File %s successfully modified\n", name);
 }
 
 void printDelete(char* name) {
-	printf("File %s deleted\n", name);
+	printf("File %s successfully deleted\n", name);
 }
 
 
@@ -53,7 +53,28 @@ localFileAlerts myFuncs = {
 pthread_t monitorthread;
 pthread_create(&monitorthread, NULL, fileMonitorThread, (void*) &myFuncs);
 
-sleep(60);
+sleep(15);
+
+blockFileAddListening("Blocked");
+printf("File Blocked will be ignored if added for 15 seconds\n");
+
+sleep(15);
+
+unblockFileAddListening("Blocked");
+blockFileWriteListening("Blocked");
+printf("File Blocked will be ignored if modified for 15 seconds\n");
+
+sleep(15);
+
+unblockFileWriteListening("Blocked");
+blockFileDeleteListening("Blocked");
+printf("File Blocked will be ignored if deleted for 15 seconds\n");
+
+sleep(15);
+
+unblockFileDeleteListening("Blocked");
+
+FileMonitor_close();
 
 pthread_exit(&monitorthread);
 
