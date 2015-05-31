@@ -29,6 +29,7 @@ typedef struct {
 	void (*fileAdded)(char *);
 	void (*fileModified)(char *);
 	void (*fileDeleted)(char *);
+	void (*fileSync)(char *);
 } localFileAlerts;
 
 /*
