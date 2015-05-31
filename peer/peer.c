@@ -487,18 +487,12 @@ void Peer_sendfiletable() {
 *@name: name to return
 */
 fileEntry_t* FileEntry_create(char* name) {
-  char* filename = calloc(1, strlen(name) - strlen(directory));
-  strcpy(filename, name + strlen(directory));
-  FileInfo myInfo = getFileInfo(filename);
+  FileInfo myInfo = getFileInfo(name);
 
-  /*fileEntry_t* newEntryPtr = calloc(1, sizeof(fileEntry_t));
-  strcpy(newEntryPtr->file_name, name);
-  newEntryPtr->size = myInfo->size;
-  newEntryPtr->timestamp = myInfo->lastModifyTime;*/
-  //char* filepath = calloc(1, (strlen(directory) + strlen(name) + 1) * sizeof(char));
-  //sprintf(filepath, "%s%s", directory, name);
+  char* filepath = calloc(1, (strlen(directory) + strlen(name) + 1) * sizeof(char));
+  sprintf(filepath, "%s%s", directory, name);
 
-  fileEntry_t* newEntryPtr = filetable_createFileEntry(name, myInfo.size, myInfo.lastModifyTime, myInfo.type);
+  fileEntry_t* newEntryPtr = filetable_createFileEntry(filepath, myInfo.size, myInfo.lastModifyTime, myInfo.type);
 
   free(myInfo.filepath);
   free(filename);
