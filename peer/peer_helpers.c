@@ -123,7 +123,7 @@ int receive_data_p2p(int peer_tracker_conn, file_metadata_t* metadata){
 
   char int_buf[10];
   memset(int_buf, 0, 10);
-  sprintf(file_path, "/tmp/%s.%d", &metadata -> filename[strlen("./")], metadata -> piece_num);
+  sprintf(file_path, "/tmp/%s.%d", strrchr(metadata -> filename, '/'), metadata -> piece_num);
   printf("File Path outputing file to%s\n", file_path);
 
   
@@ -215,7 +215,7 @@ int recombine_temp_files(char* filepath, int num_pieces) {
 
     // create the filepath to the temporary file the piece is in
     char temp_filepath[FILE_NAME_MAX_LEN];
-    sprintf(temp_filepath, "/tmp/%s.%d", &filepath[strlen("./")], num);
+    sprintf(temp_filepath, "/tmp/%s.%d", strrchr(filepath, '/'), num);
 
     //open the temporary file that the piece is in
     FILE* temp_file = fopen(temp_filepath, "r");
