@@ -576,7 +576,7 @@ void blockFileDeleteListening(char* filename) {
 		if(S_ISDIR(entinfo.st_mode)) {
 			DIR *dir;
 			struct dirent *ent;
-			if ((dir = opendir(directory)) != NULL) {
+			if ((dir = opendir(filename)) != NULL) {
 				while ((ent = readdir(dir)) != NULL) {
 					char* filepath = calloc(1, strlen(filename) + 1 + strlen(ent->d_name));
 					sprintf("%s/%s", filename, ent->d_name);
