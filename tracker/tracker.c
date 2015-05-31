@@ -148,7 +148,7 @@ void *handshake(void* arg){
 
           // if the filetable entry has an outdated timestamp, the file has been updated
           // so need broadcast and update the file
-          else if( (iter->timestamp) < (entry -> timestamp) ) {
+          else if( (iter->timestamp) > (entry -> timestamp) ) {
             filetable_updateFile(entry, iter, myFileTablePtr->filetable_mutex);
             needBroadCast = 1;
           }
