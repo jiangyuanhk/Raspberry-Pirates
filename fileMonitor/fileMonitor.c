@@ -580,7 +580,7 @@ void blockFileDeleteListening(char* filename) {
 				while ((ent = readdir(dir)) != NULL) {
 					if(strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..")) {
 						char* filepath = calloc(1, strlen(filename) + 1 + strlen(ent->d_name));
-						sprintf("%s/%s", filename, ent->d_name);
+						sprintf(filepath, "%s/%s", filename, ent->d_name);
 						blockFileDeleteListening(filepath);
 						free(filepath);
 					}

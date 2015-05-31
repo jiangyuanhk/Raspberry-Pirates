@@ -93,23 +93,31 @@ void delete_folder_tree (const char* directory_name) {
     dir = opendir(directory_name);
 
     while ((ent = readdir(dir)) != NULL) {
-        if(strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..")) {
+        if( (strcmp(ent->d_name, ".") == 0) || (strcmp(ent->d_name, "..") == 0) ) {
           continue;
         }
         sprintf(buf, "%s/%s", directory_name, ent->d_name);
         printf("Deleting entity from the filetable: %s \n", ent -> d_name);
+
         filetable_deleteFileEntryByName(filetable, ent->d_name);
         struct stat entinfo;
+        
         if (S_ISDIR(entinfo.st_mode)) {
             delete_folder_tree(buf);
           }
-        else {
-            unlink(buf);
-          }
+        
+        unlink(buf);
     }
 
     closedir(dir);
     rmdir(directory_name);
+}
+
+void* delete_timer(void* arg) {
+  char* filepath = (char*) arg;
+  sleep(MONITOR_POLL_INTERVAL);
+  unblockFileDeleteListening(filepath);
+  pthread_exit(NULL);
 }
 
 //Thread to listen for messages from the tracker.  Upon receiving messages from the tracker, it looks
@@ -173,10 +181,16 @@ void* tracker_listening(void* arg) {
 
       //check to see if the local file exists in the tracker table
       fileEntry_t* master_file = filetable_searchFileByName(tracker_filetable, file -> file_name);
+
+      char delete_filepath [FILE_NAME_MAX_LEN];
+      memset(delete_filepath, 0, FILE_NAME_MAX_LEN);
+
       //if the file is not in the master file table and is locally, then delete it
       if (master_file == NULL) {
 
         blockFileDeleteListening(file -> file_name);
+
+        memcpy(delete_filepath, file -> file_name, strlen(file -> file_name));
 
         if(S_ISDIR(file -> file_type)) {
           delete_folder_tree(file -> file_name);
@@ -185,20 +199,25 @@ void* tracker_listening(void* arg) {
 
         else if( remove(file -> file_name) == 0) {
           printf("Successfully removed the file in filesystem: %s \n", file -> file_name);
-          //filetable_deleteFileEntryByName(filetable, file -> file_name);
-
-          file = file -> next;
         }
 
         else {
-          file = file -> next;
           printf("Error in removing the file from the file system.\n");
         }
-
-
-        filetable_deleteFileEntryByName(filetable, file -> file_name);
+        //add to a a list of deleted files
+          
       }
+
       file = file -> next;
+
+      //remove the file from the filetable if it was removed
+      if (strlen(delete_filepath) > 0) {
+        filetable_deleteFileEntryByName(filetable, delete_filepath);
+
+        pthread_t delete_timer_thread;
+        pthread_create(&delete_timer_thread, NULL, delete_timer, delete_filepath);
+      }
+
     }
     printf("Finished deleting files.\n");
   }
@@ -254,6 +273,12 @@ void* p2p_listening(void* arg) {
     pthread_t p2p_upload_thread;
     pthread_create(&p2p_upload_thread, NULL, p2p_upload, &peer_conn);
   }
+
+  if (peer_sockfd != -1) {
+    close(peer_sockfd);
+  }
+
+  pthread_exit(NULL); 
 }
 
 
