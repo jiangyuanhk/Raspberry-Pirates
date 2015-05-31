@@ -659,11 +659,62 @@ void Filetable_peerDelete(char* name) {
 * Callback sync method for the File Monitor
 *@name: name of the file to add
 */
-/*void Filetable_peerSync(char* name) {
-  fileEntry_t* newEntryPtr = FileEntry_create(name);
-  filetable_appendFileEntry(filetable, newEntryPtr);
-  printf("File entry for %s synced to filetable\n", name);
-}*/
+void Filetable_peerSync() {
+  //Receive the acknowledgement of the register packet from the tracker
+  printf("Receiving registered handshake packet from the tracker.\n");
+  ptp_tracker_t* packet = calloc(1, sizeof(ptp_tracker_t));
+  pkt_peer_recvPkt(tracker_connection, packet);
+  heartbeat_interval = packet -> heartbeatinterval;
+  piece_len = packet -> piece_len;  
+  printf("Interval: %d  Piece Len: %d   FT-Size: %d \n", packet -> heartbeatinterval, packet -> piece_len, packet -> filetablesize);
+
+  //extract the file table from the packet from the tracker
+  fileTable_t* tracker_filetable = filetable_convertEntriesToFileTable(packet -> filetableHeadPtr);
+  printf("Received filetable:\n");
+  filetable_printFileTable(tracker_filetable);
+  //loop through the master file table to see which files need to be synchronized locally
+  fileEntry_t* file = tracker_filetable -> head;
+    
+  while (file != NULL) {
+
+    //check to see if the file exists locally
+    fileEntry_t* local_file = filetable_searchFileByName(filetable, file -> file_name); 
+      
+    // download the updated file if the local file does not exist (ADD)
+    if(local_file == NULL) {
+        
+      blockFileAddListening(file -> file_name);
+      if(S_ISDIR(local_file -> file_type)) {
+          mkdir(local_file -> file_name, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+          //add the directory to the local filetable
+          fileEntry_t* new_folder = FileEntry_create(local_file -> file_name);
+          filetable_appendFileEntry(filetable, new_folder);
+          printf("Directory created: %s\n", file -> file_name);
+      }
+      else {
+        printf("File added. Need to download file: %s\n", file -> file_name);
+        pthread_t p2p_download_thread;
+        pthread_create(&p2p_download_thread, NULL, p2p_download_file, file);
+      }
+    }
+
+    //download the file the file if it outdated (UPDATE)
+    else if ( (file -> timestamp) > (local_file -> timestamp) ) { 
+      printf("File updated or added.  Need to download file: %s\n", file -> file_name);
+      blockFileWriteListening(file -> file_name);
+        
+      //TODO make sure that the file is not already being downloaded and if not, add to the peer table
+      pthread_t p2p_download_file_thread;
+      pthread_create(&p2p_download_file_thread, NULL, p2p_download_file, file);
+    }
+
+    file = file -> next;  //move to next item in file table from tracker
+  }
+
+  printf("Finished determining files that need to be synced.\n");
+  free(packet);
+  printf("Peer synced to tracker\n");
+}
 //--------------------File Monitor Callbacks-------------------------
 /*
 * Stops and cleans up the peer
@@ -732,15 +783,6 @@ int main(int argc, char *argv[]) {
   free(register_pkt);
   printf("Successfully sent register packet.\n");
 
-  //Receive the acknowledgement of the register packet from the tracker
-  printf("Receiving registered handshake packet from the tracker.\n");
-  ptp_tracker_t* packet = calloc(1, sizeof(ptp_tracker_t));
-  pkt_peer_recvPkt(tracker_connection, packet);
-  heartbeat_interval = packet -> heartbeatinterval;
-  piece_len = packet -> piece_len;  
-  printf("Interval: %d  Piece Len: %d   FT-Size: %d \n", packet -> heartbeatinterval, packet -> piece_len, packet -> filetablesize);
-  free(packet);
-
 
   //Start the keep alive thread
   // pthread_t keep_alive_thread;
@@ -759,20 +801,20 @@ int main(int argc, char *argv[]) {
   void (*Add)(char *);
   void (*Modify)(char *);
   void (*Delete)(char *);
-  //void (*Sync)(char *);
+  void (*Sync)(void);
   void (*SendUpdate)(void);
 
   Add = &Filetable_peerAdd;
   Modify = &Filetable_peerModify;
   Delete = &Filetable_peerDelete;
-  //Sync = &Filetable_peerSync;
+  Sync = &Filetable_peerSync;
   SendUpdate = &Peer_sendfiletable;
 
   localFileAlerts myFuncs = {
     Add,
     Modify,
     Delete,
-    //Sync,
+    Sync,
     SendUpdate
   };
 

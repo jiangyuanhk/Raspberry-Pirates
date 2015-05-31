@@ -53,6 +53,8 @@ void *fileMonitorThread(void* arg) {
 		//funcs->fileSync(ftable->table[i].filepath);
 		funcs->fileAdded(ftable->table[i].filepath);
 	}
+	//sync using the register packet
+	funcs->fileSync();
 	//funcs->fileAdded(ftable->table[i].filepath);
 	funcs->filesChanged();
 	//wait a set interval time before checking the directory again
