@@ -495,7 +495,6 @@ fileEntry_t* FileEntry_create(char* name) {
   fileEntry_t* newEntryPtr = filetable_createFileEntry(filepath, myInfo.size, myInfo.lastModifyTime, myInfo.type);
 
   free(myInfo.filepath);
-  free(filename);
 
   return newEntryPtr;
   
