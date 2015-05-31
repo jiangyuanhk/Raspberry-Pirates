@@ -258,6 +258,24 @@ void* p2p_upload(void* arg) {
 
 
 //--------------------File Monitor Callbacks-------------------------
+/*
+* Creates a fileEntry_t from a file name
+*
+*@name: name to return
+*/
+fileEntry_t* FileEntry_create(char* name) {
+  FileInfo myInfo = getFileInfo(name);
+
+  fileEntry_t* newEntryPtr = calloc(1, sizeof(fileEntry_t));
+  strcpy(newEntryPtr->file_name, name);
+  newEntryPtr->size = myInfo.size;
+  newEntryPtr->timestamp = myInfo.lastModifyTime;
+
+  free(myInfo.filepath);
+
+  return newEntryPtr;
+  
+}
 /* 
 * Callback methods for the File Monitor
 *@name: name of the file to modify
