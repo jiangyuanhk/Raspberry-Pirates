@@ -30,7 +30,7 @@ typedef struct {
 	void (*fileAdded)(char *);
 	void (*fileModified)(char *);
 	void (*fileDeleted)(char *);
-	//void (*fileSync)(char *);
+	void (*fileSync)(void);
 	void (*filesChanged)(void);
 } localFileAlerts;
 
