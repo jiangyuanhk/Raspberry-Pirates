@@ -83,6 +83,21 @@ void readConfigFile(char* filename);
 */
 void FileMonitor_freeAll();
 /*
+* Recursively counts all files in the subdirectory
+*
+*@subdirectory_path: the path of the current subdirectory
+*
+*returns the number of files in this subdirectory and its subdirectories
+*/
+int FileInfo_table_SubdirectoryFileCount(char* subdirectory_path);
+/*
+* Recursively adds all files in the subdirectory
+*
+*@allfiles: the file info table to add to
+*@subdirectory_path: the path of the current subdirectory
+*/
+int FileInfo_table_Subdirectory(FileInfo_table* allfiles, char* subdirectory_path, int idx);
+/*
 * Adds a file from the block list
 *
 *@toAppend: the item to be added

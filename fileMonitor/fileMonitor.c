@@ -98,13 +98,110 @@ FileInfo getFileInfo(char* filename) {
 	}
 
 	FileInfo myInfo;
-	myInfo.filepath = filename;
+	myInfo.filepath = calloc(1, strlen(filename)*sizeof(char)+1);
+	strcpy(myInfo.filepath, filename);
 	myInfo.size = statinfo.st_size;
 	myInfo.lastModifyTime = statinfo.st_mtime;
 
 	free(filepath);
 
 	return myInfo;
+}
+/*
+* Recursively counts all files in the subdirectory
+*
+*@subdirectory_path: the path of the current subdirectory
+*
+*returns the number of files in this subdirectory and its subdirectories
+*/
+int FileInfo_table_SubdirectoryFileCount(char* subdirectory_path) {
+	char* extension;
+	int num_files = 0;
+	//http://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
+	DIR *dir;
+	struct dirent *ent;
+	struct stat entinfo;
+	if ((dir = opendir(subdirectory_path)) != NULL) {
+		while ((ent = readdir(dir)) != NULL) {
+			char* filepath = calloc(1, (strlen(subdirectory_path) + strlen(ent->d_name) + 2) * sizeof(char));
+			sprintf(filepath, "%s/%s", subdirectory_path, ent->d_name);
+			stat(filepath, &entinfo);
+			if(S_ISREG(entinfo.st_mode)) {
+				extension = strrchr(ent->d_name, '.');
+				if(extension) {
+					if(strcmp(extension, ".swp") == 0) {
+						free(filepath);
+						continue;
+					}
+				}
+				num_files++;
+			}
+			else if (S_ISDIR(entinfo.st_mode)) {
+				if(strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..")) {
+					num_files+=FileInfo_table_SubdirectoryFileCount(filepath);
+				}
+			}
+			free(filepath);
+		}
+		closedir(dir);
+	}
+	else {
+		printf("Failed to open directory\n");
+		return 0;
+	}
+	return num_files;
+}
+/*
+* Recursively adds all files in the subdirectory
+*
+*@allfiles: the file info table to add to
+*@subdirectory_path: the path of the current subdirectory
+*/
+int FileInfo_table_Subdirectory(FileInfo_table* allfiles, char* subdirectory_path, int idx) {
+	char* extension;
+	DIR *dir;
+	struct dirent *ent;
+	struct stat entinfo;
+	char* subdir = calloc(1, (strlen(subdirectory_path) + strlen(directory) + 2) * sizeof(char));
+	sprintf(subdir, "%s%s/", directory, subdirectory_path);
+	if ((dir = opendir(subdir)) != NULL) {
+		while ((ent = readdir(dir)) != NULL) {
+			char* filepath = calloc(1, (strlen(subdir) + strlen(ent->d_name) + 2) * sizeof(char));
+			sprintf(filepath, "%s/%s", subdir, ent->d_name);
+			char* relpath = calloc(1, (strlen(subdirectory_path) + strlen(ent->d_name) + 2) * sizeof(char));
+			sprintf(relpath, "%s/%s", subdirectory_path, ent->d_name);
+			stat(filepath, &entinfo);
+			if(S_ISREG(entinfo.st_mode)) {
+				extension = strrchr(ent->d_name, '.');
+				if(extension) {
+					if(strcmp(extension, ".swp") == 0) {
+						free(filepath);
+						continue;
+					}
+				}
+				allfiles->table[idx] = getFileInfo(relpath);
+				idx++;
+			}
+			else if(S_ISDIR(entinfo.st_mode)) {
+				if(strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..")) {
+					idx = FileInfo_table_Subdirectory(allfiles, relpath, idx);
+					
+				}
+			}
+			if(idx == allfiles->num_files) {
+				break;
+			}
+			free(relpath);
+			free(filepath);
+		}
+		closedir(dir);
+	}
+	else {
+		printf("Failed to open directory\n");
+		return 0;
+	}
+	free(subdir);
+	return idx;
 }
 /*
 *Gets a table of file info for the directory
@@ -132,6 +229,11 @@ FileInfo_table* getAllFilesInfo() {
 					}
 				}
 				num_files++;
+			}
+			else if (S_ISDIR(entinfo.st_mode)) {
+				if(strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..")) {
+					num_files+=FileInfo_table_SubdirectoryFileCount(filepath);
+				}
 			}
 			free(filepath);
 		}
@@ -162,6 +264,11 @@ FileInfo_table* getAllFilesInfo() {
 				}
 				allfiles->table[idx] = getFileInfo(ent->d_name);
 				idx++;
+			}
+			else if(S_ISDIR(entinfo.st_mode)) {
+				if(strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..")) {
+					idx = FileInfo_table_Subdirectory(allfiles, ent->d_name, idx);
+				}
 			}
 			if(idx == num_files) {
 				break;
@@ -291,9 +398,10 @@ void FileMonitor_freeAll() {
 		free(toFree->filepath);
 		free(toFree);
 	}
-	else {
-		free(blockList);
-	}
+
+	ftable = NULL;
+	directory = NULL;
+	blockList = NULL;
 }
 /*
 * Adds a file from the block list
@@ -396,6 +504,8 @@ void blockFileAddListening(char* filename) {
 
 	FileBlockList_Append(blockAdd);
 
+	blockFileWriteListening(filename);
+
 }
 /*
 *Blocks a file from being updated
@@ -445,6 +555,11 @@ int unblockFileAddListening(char* filename) {
 
 	int event = EVENT_ADDED;
 
+	int ret = unblockFileWriteListening(filename);
+	if(!ret) {
+		printf("Unexpected unblock failure for file %s", filename);
+	}
+
 	return FileBlockList_Remove(filepath, event);
 
 }
@@ -487,7 +602,7 @@ void FileInfo_table_print(FileInfo_table* toPrint) {
 	printf("This file table has %d files. These files are as follows:\n\n", toPrint->num_files);
 	int i;
 	for(i = 0; i < toPrint->num_files; i++) {
-		printf("\tFile Name: %.16s\t\t|\tFile Size: %d\n", toPrint->table[i].filepath, toPrint->table[i].size);
+		printf("\tFile Name: %s\t|\tFile Size: %d\n", toPrint->table[i].filepath, toPrint->table[i].size);
 	}
 	printf("\n\n");
 }
