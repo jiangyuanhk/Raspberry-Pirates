@@ -51,22 +51,21 @@ peerTable_t* peertable;         //peer table to keep track of ongoing downloadin
 int connect_to_tracker() {
   int tracker_connection;
   struct sockaddr_in servaddr;
-  struct hostent *hostInfo;
 
   //Get the host name by requesting user input and check if valid
-  char hostname[MAX_HOSTNAME_SIZE];
-  printf("Enter hostname of the tracker to connect to:");
-  scanf("%s",hostname);
+  char ip[IP_LEN];
+  printf("Enter ip address of the tracker to connect to:");
+  scanf("%s",ip);
 
-  hostInfo = gethostbyname(hostname);
-  if (!hostInfo) {
-    printf("Error with the hostname of the tracker!\n");
-    return -1;
-  }
+  // hostInfo = gethostbyname(hostname);
+  // if (!hostInfo) {
+  //   printf("Error with the hostname of the tracker!\n");
+  //   return -1;
+  // }
     
   // Set up the tracker address info so we can connect to it
-  servaddr.sin_family = hostInfo->h_addrtype;  
-  memcpy((char *) &servaddr.sin_addr.s_addr, hostInfo->h_addr_list[0], hostInfo->h_length);
+  servaddr.sin_family = AF_INET; 
+  servaddr.sin_addr.s_addr = inet_addr(ip);     
   servaddr.sin_port = htons(HANDSHAKE_PORT);
 
   // Create socket on local host to connect to the tracker

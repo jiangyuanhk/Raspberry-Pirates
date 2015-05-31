@@ -165,7 +165,7 @@ int main() {
 
   downloadEntry_t* entry = init_downloadEntry(file, 5000);
 
-
+  // this is the download file thread that should spin off
   int i = 0;
   while (strlen(file -> iplist[i]) != 0) {
     printf("Creating list download thread for: %s\n", file -> iplist[i]);
@@ -177,55 +177,17 @@ int main() {
     i++;
   }
 
-  while(entry -> successful_pieces != entry -> num_pieces){
-    printf("Waiting for pieces to download.\n");
-    sleep(1);
-  }
+  //wait until the pieces are all successfully downloaded
+  while(entry -> successful_pieces != entry -> num_pieces);
  
   if (recombine_temp_files(entry -> file_name, entry -> num_pieces) < 0) {
-    printf("Error \n");
+    printf("Error recombining the temp files.  Could not updated the entry. \n");
   }
 
-  printf("Main file: %s \n", entry -> file_name);
-  
-  FILE* main_file = fopen(entry -> file_name , "w");
-
-  if (main_file == NULL) {
-    printf("Error opening main file to write to.\n");
-    exit(1);
+  else {
+    printf("File Succesfully Updated: %s\n", entry -> file_name);
   }
 
-  int j;
-  //open the new file to write
-  for(j = 1; j <= entry -> num_pieces; j++) {
-
-      char temp_filepath[300];
-      sprintf(temp_filepath, "/tmp/%s.%d", entry -> file_name, j);
-      FILE* temp_file = fopen(temp_filepath, "r");
-      printf("Copying File into main file: %s\n", temp_filepath);
-
-      if (temp_file == NULL) {
-        printf("Error opening temp file to write to.\n");
-        exit(1);
-      }
-
-      char buffer[1000];
-      size_t bytes;
-
-      while (0 < (bytes = fread(buffer, 1, sizeof(buffer), temp_file)) ){
-        fwrite(buffer, 1, bytes, main_file);
-      }
-
-      fclose(temp_file);
-      remove(temp_filepath);
-  }
-
-  fclose(main_file);
-  printf("Main file updated.\n");
-
-
-  //loop through all of the pieces and write to the main file.
-
-  // close(peer_conn);
+  pthread_exit(NULL);
 }
 
