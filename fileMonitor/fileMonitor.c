@@ -111,7 +111,7 @@ FileInfo getFileInfo(char* filename) {
 	struct stat statinfo;
 	if(stat(filepath, &statinfo) == -1) {
 		free(filepath);
-		perror("Stat error");
+		perror("Stat error on %s", filepath);
 		exit(EXIT_FAILURE);
 	}
 
