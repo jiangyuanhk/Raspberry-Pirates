@@ -36,6 +36,7 @@
 int tracker_connection;     // socket connection between peer and tracker so can send / receive between the two
 int heartbeat_interval;
 int piece_len;
+int register_recv = 0;
 //terminates the threads when this flips to 0
 int noSIGINT = 1;
 
@@ -552,7 +553,7 @@ void Filetable_peerSync() {
   //Receive the acknowledgement of the register packet from the tracker
   printf("Receiving registered handshake packet from the tracker.\n");
   ptp_tracker_t* packet = calloc(1, sizeof(ptp_tracker_t));
-  pkt_peer_recvPkt(tracker_connection, packet);
+  register_recv = pkt_peer_recvPkt(tracker_connection, packet);
   heartbeat_interval = packet -> heartbeatinterval;
   piece_len = packet -> piece_len;  
   printf("Interval: %d  Piece Len: %d   FT-Size: %d \n", packet -> heartbeatinterval, packet -> piece_len, packet -> filetablesize);
@@ -713,8 +714,10 @@ int main(int argc, char *argv[]) {
   if (getcwd(cwd1, sizeof(cwd1)) != NULL)
     printf("Current working dir: %s\n", cwd1);
 
+  while(!register_recv) {
+    sleep(MONITOR_POLL_INTERVAL);
+  }
   //printf("Begin initial sync with the peer. Send file table to peer.\n");
-  //Peer_sendfiletable();
   printf("Begin the tracker listening thread. \n");
   // start the thread to listen for data from the tracker
   pthread_t tracker_listening_thread;
