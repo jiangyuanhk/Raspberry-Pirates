@@ -686,9 +686,6 @@ int main(int argc, char *argv[]) {
   // pthread_t keep_alive_thread;
   // pthread_create(&keep_alive_thread, NULL, keep_alive, NULL);
   
-  // start the thread to listen on the p2p port for connections from other peers
-  pthread_t p2p_listening_thread;
-  pthread_create(&p2p_listening_thread, NULL, p2p_listening, &tracker_connection);
 
   //--------------------File Monitor Thread-------------------------
   void (*Add)(char *);
@@ -730,6 +727,11 @@ int main(int argc, char *argv[]) {
   // start the thread to listen for data from the tracker
   pthread_t tracker_listening_thread;
   pthread_create(&tracker_listening_thread, NULL, tracker_listening, (void*)0);
+
+  
+  // start the thread to listen on the p2p port for connections from other peers
+  pthread_t p2p_listening_thread;
+  pthread_create(&p2p_listening_thread, NULL, p2p_listening, &tracker_connection);
 
   while(noSIGINT) sleep(60);
 }
