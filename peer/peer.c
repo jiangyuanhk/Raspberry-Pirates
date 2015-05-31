@@ -56,7 +56,7 @@ int connect_to_tracker() {
 
   //Get the host name by requesting user input and check if valid
   char ip[IP_LEN];
-  printf("Enter ip address of the tracker to connect to:");
+  printf("Enter ip address of the tracker to connect to: %s", ip);
   scanf("%s",ip);
 
   // hostInfo = gethostbyname(hostname);
@@ -297,6 +297,7 @@ void* p2p_download(void* arg) {
   free(args);
   
   printf("Trying to connect to the download thread for ip: %s\n", ip);
+
   // Create a socket and connect to the given IP address.
   struct sockaddr_in servaddr;
   servaddr.sin_family = AF_INET;

@@ -215,7 +215,7 @@ int recombine_temp_files(char* filepath, int num_pieces) {
 
     // create the filepath to the temporary file the piece is in
     char temp_filepath[FILE_NAME_MAX_LEN];
-    sprintf(temp_filepath, "/tmp/%s.%d", filepath, num);
+    sprintf(temp_filepath, "/tmp/%s.%d", strchr(filepath,'/') + 1, num);
 
     //open the temporary file that the piece is in
     FILE* temp_file = fopen(temp_filepath, "r");

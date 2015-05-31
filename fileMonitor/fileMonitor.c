@@ -112,7 +112,7 @@ FileInfo getFileInfo(char* filename) {
 	if(stat(filepath, &statinfo) == -1) {
 		free(filepath);
 		perror("Stat error");
-		printf("%s\n", filepath)
+		printf("%s\n", filepath);
 		exit(EXIT_FAILURE);
 	}
 
