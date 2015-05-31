@@ -20,6 +20,7 @@
 #include "../../peer/peer_helpers.h"
 #include "../p2p.h"
 
+#define BUFFER_LEN 1500
 
 //Function that downloads p2p pieces until there are no more for the file.
 void* p2p_download(void* arg) {
@@ -58,54 +59,90 @@ void* p2p_download(void* arg) {
     if ( (piece = get_downloadPiece(entry)) != NULL) {
         
       printf("Piece.... Start : %d Size: %d Piece Num: %d \n", piece -> start, piece -> size, piece -> piece_num);
-      file_metadata_t* metadata = send_meta_data_info(peer_conn, entry -> file_name, piece -> start, piece -> size, piece -> piece_num);
+      file_metadata_t* metadata;
+      
+      // if sending the metadata failed, we cannot send the piece so readd the piece to the piece list
+      if ( (metadata = send_meta_data_info(peer_conn, entry -> file_name, piece -> start, piece -> size, piece -> piece_num)) == NULL) {
+        printf("Readding the piece to the piece list.\n");
+        readd_piece_to_list(entry, piece);
+        close(peer_conn);
+        pthread_exit(NULL);
+      }
 
-      int ret2 = receive_data_p2p(peer_conn, metadata);
-      printf("Ret: %d \n", ret2);
+      //if we fail receiving the data from the peer, re-add the piece to the folder
+      if (receive_data_p2p(peer_conn, metadata) < 0) {
+        printf("Error receiving the data p2p.  Readding the piece to the folder.\n");
+        readd_piece_to_list(entry, piece);
+        free(metadata);
+        close(peer_conn);
+        pthread_exit(NULL);
+      }
+
       free(metadata);
-      printf("Free worked.\n");
+
       entry -> successful_pieces ++;
-      printf("Finisiedh loop\n");
     }
   }
 
-  //close the connection and exit the thread
-  //free any necessary memory
   close(peer_conn);
   pthread_exit(0);
 }
 
-void* p2p_upload(void* arg) {
-  pthread_exit(0);
-}
+int recombine_temp_files(char* filepath, int num_pieces) {
+  
+  printf("Recombining Pieces for Files: %s \n", filepath);
+    
+  //open the main file that will the pieces will be rewritten to
+  FILE* main_file = fopen(filepath , "w");
 
+  if (main_file == NULL) {
+    printf("Error opening main file to write to.\n");
+    exit(1);
+  }
+
+  int num;
+  
+  // For each piece, open the file and write the contents to the main file
+  for(num = 1; num <= num_pieces; num++) {
+
+    // create the filepath to the temporary file the piece is in
+    char temp_filepath[FILE_NAME_MAX_LEN];
+    sprintf(temp_filepath, "/tmp/%s.%d", filepath, num);
+
+    //open the temporary file that the piece is in
+    FILE* temp_file = fopen(temp_filepath, "r");
+
+    //if there is an error opening the piece, return -1
+    if (temp_file == NULL) {
+      printf("Error opening temp file to write to.\n");
+      fclose(temp_file);
+      fclose(main_file);
+      return -1;
+    }
+
+    printf("Copying Piece Number: %d", num);
+
+    char buffer[1500];
+    size_t bytes;
+
+    //loop through the file, read in data and write it to the main file
+    while (0 < (bytes = fread(buffer, 1, sizeof(buffer), temp_file)) ){
+      fwrite(buffer, 1, bytes, main_file);
+    }
+
+    //once done reading the temp file, close it and remove it
+    fclose(temp_file);
+    remove(temp_filepath);
+  }
+
+  fclose(main_file);
+  return 1;
+}
 
 int main() {
 
   downloadTable_t* downloadtable = init_downloadTable();
 
-  // struct sockaddr_in servaddr;
-  // servaddr.sin_family = AF_INET;
-  // servaddr.sin_addr.s_addr = inet_addr("129.170.214.213");      //connect to spruce
-  // servaddr.sin_port = htons(P2P_PORT);
-
-  // int peer_conn = socket(AF_INET, SOCK_STREAM, 0);  
-
-  // if(peer_conn < 0) {
-  //   printf("Error creating socket in p2p download.\n");
-  //   pthread_exit(NULL);
-  // }
-
-  // if( connect(peer_conn, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0){
-  //   printf("Failed to connect ot local ON process.\n");
-  //   pthread_exit(NULL);
-  // }
-
-  // printf("Connected to a peer upload thread.\n");
-
-  // printf("Send the file name to the peer.\n");
-  // file_metadata_t* meta_info  = send_meta_data_info(peer_conn, "test.txt", 0, 53046, 0);
-  // free(meta_info);  
   fileEntry_t* file = malloc(sizeof(fileEntry_t));
   file -> size = 6506;
 
@@ -124,8 +161,6 @@ int main() {
   // memset(file-> iplist[0], 0, IP_LEN);
   // memcpy(file -> iplist[0], "129.170.95.93", strlen("129.170.95.93"));
 
-
-
   file -> peerNum = 1;
 
   downloadEntry_t* entry = init_downloadEntry(file, 5000);
@@ -139,22 +174,6 @@ int main() {
     
     pthread_t p2p_download_thread;
     pthread_create(&p2p_download_thread, NULL, p2p_download, args);
-
-
-    // printf("Starting Thread for Downloading From Ip: %s\n", file -> iplist[i]);
-
-    // while(entry -> successful_pieces != entry -> num_pieces) {
-    //   downloadPiece_t* piece = get_downloadPiece(entry);
-    //   printf("Piece.... Start : %d Size: %d Piece Num: %d \n", piece -> start, piece -> size, piece -> piece_num);
-    //   file_metadata_t* metadata = send_meta_data_info(peer_conn, entry -> file_name, piece -> start, piece -> size, piece -> piece_num);
-
-    //   int ret2 = receive_data_p2p(peer_conn, metadata);
-    //   printf("Ret: %d \n", ret2);
-    //   free(metadata);
-    //   printf("Free worked.\n");
-    //   entry -> successful_pieces ++;
-    //   printf("Finisiedh loop\n");
-    // }
     i++;
   }
 
@@ -163,6 +182,10 @@ int main() {
     sleep(1);
   }
  
+  if (recombine_temp_files(entry -> file_name, entry -> num_pieces) < 0) {
+    printf("Error \n");
+  }
+
   printf("Main file: %s \n", entry -> file_name);
   
   FILE* main_file = fopen(entry -> file_name , "w");

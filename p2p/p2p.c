@@ -122,6 +122,22 @@ downloadPiece_t* get_downloadPiece(downloadEntry_t* download_entry) {
   return piece_to_download;
 }
 
+void readd_piece_to_list(downloadEntry_t* download_entry, downloadPiece_t* piece) { 
+  pthread_mutex_lock(download_entry -> mutex);
+
+  if (download_entry -> size == 0) {
+    download_entry -> head = piece;
+    download_entry -> tail = piece;
+  }
+
+  else { 
+    download_entry -> tail -> next = piece;
+    download_entry -> tail =  piece;
+  }
+
+  download_entry -> size ++;
+}
+
 //Create struct to send to p2p upload thread.
 arg_struct_t* create_arg_struct(downloadEntry_t* download_entry, char* ip) {
   arg_struct_t* args = malloc(sizeof(arg_struct_t));

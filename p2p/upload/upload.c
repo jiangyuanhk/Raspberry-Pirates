@@ -19,8 +19,6 @@
 #include "../p2p.h"
 #include "../../peer/peer_helpers.h"
 
-// #define BUFFER_SIZE 1500
-
 
 void* p2p_upload(void* arg) {
 

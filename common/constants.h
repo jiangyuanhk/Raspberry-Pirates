@@ -3,7 +3,7 @@
 
 #define IP_LEN 20
 // #define MAX_FILE_NUM 1000
-#define FILE_NAME_MAX_LEN 127
+#define FILE_NAME_MAX_LEN 512
 #define MAX_NUM_PEERS 10
 #define MAX_FILEPATH_LEN 300
 
