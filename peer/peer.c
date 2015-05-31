@@ -181,6 +181,8 @@ void* tracker_listening(void* arg) {
 
         else if( remove(file -> file_name) == 0) {
           printf("Successfully removed the file in filesystem: %s \n", file -> file_name);
+          //filetable_deleteFileEntryByName(filetable, file -> file_name);
+
           file = file -> next;
         }
 
