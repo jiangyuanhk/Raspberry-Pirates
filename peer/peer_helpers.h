@@ -80,11 +80,14 @@ void readd_piece_to_list(downloadEntry_t* entry, downloadPiece_t* piece);
 
 arg_struct_t* create_arg_struct(downloadEntry_t* download_entry, char* ip);
 
+//free everything in the table, table, linked list of entries and the linked list of pieces for each entry
 void downloadtable_destroy(downloadTable_t* downloadtable);
 
-int add_entry_to_downloadtable(downloadTable_t* downloadtable, downloadEntry* entry);
+//add an entry that has already been init'ed with init downloadEntry to the download table
+int add_entry_to_downloadtable(downloadTable_t* downloadtable, downloadEntry_t* entry);
 
-int remove_entry_from_downloadtable(downloadTable_t* downloadtable, char* filename)
+//remove and entry from the download table
+int remove_entry_from_downloadtable(downloadTable_t* downloadtable, char* filename);
 
 
 #endif
