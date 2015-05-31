@@ -27,6 +27,10 @@ void printDelete(char* name) {
 	printf("File %s successfully deleted\n", name);
 }
 
+void printChange() {
+	printf("Change detected in file system\n");
+}
+
 
 
 int main(int argc, char *argv[]) {
@@ -34,10 +38,12 @@ int main(int argc, char *argv[]) {
 	void (*Add)(char *);
 	void (*Modify)(char *);
 	void (*Delete)(char *);
+	void (*filesChanged)(void);
 
 	Add = &printAdd;
 	Modify = &printModify;
 	Delete = &printDelete;
+	filesChanged = &printChange;
 
 	/*Add = (void *)printAdd;
 	Modify = (void *)printModify;
@@ -46,7 +52,8 @@ int main(int argc, char *argv[]) {
 localFileAlerts myFuncs = {
 	Add,
 	Modify,
-	Delete
+	Delete,
+	filesChanged
 };
 
 

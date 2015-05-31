@@ -3,6 +3,7 @@
 
 #include "constants.h"
 #include <pthread.h>
+#include <sys/stat.h>
 
 #define REGULAR_FILE 0
 #define DIRECTORY 1
@@ -19,7 +20,7 @@ typedef struct fileEntry{
  char iplist[MAX_NUM_PEERS][IP_LEN]; //tracker:  this is a list of peers' ips posessing the file
                                     //peer:     only contains ip of peer itself, put it in iplist[0]
  int peerNum;   					//tracker: number of peers in the ip list                    
- int file_type;
+ mode_t file_type;
 }fileEntry_t;
 
 

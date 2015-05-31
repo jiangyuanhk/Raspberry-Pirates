@@ -9,6 +9,7 @@
 typedef struct {
   char* filepath;			//path of the file
   int size;					//size of the file
+  mode_t type;				//file type
   unsigned long int lastModifyTime; //time stamp
 } FileInfo;
 
@@ -29,7 +30,8 @@ typedef struct {
 	void (*fileAdded)(char *);
 	void (*fileModified)(char *);
 	void (*fileDeleted)(char *);
-	void (*fileSync)(char *);
+	//void (*fileSync)(char *);
+	void (*filesChanged)(void);
 } localFileAlerts;
 
 /*

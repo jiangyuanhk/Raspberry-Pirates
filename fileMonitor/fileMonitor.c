@@ -50,9 +50,11 @@ void *fileMonitorThread(void* arg) {
 
 	int i;
 	for(i = 0; i < ftable->num_files - 1; i++) {
-		funcs->fileSync(ftable->table[i].filepath);
+		//funcs->fileSync(ftable->table[i].filepath);
+		funcs->fileAdded(ftable->table[i].filepath);
 	}
-	funcs->fileAdded(ftable->table[i].filepath);
+	//funcs->fileAdded(ftable->table[i].filepath);
+	funcs->filesChanged();
 	//wait a set interval time before checking the directory again
 	sleep(MONITOR_POLL_INTERVAL);
 
@@ -102,6 +104,7 @@ FileInfo getFileInfo(char* filename) {
 	myInfo.filepath = calloc(1, strlen(filename)*sizeof(char)+1);
 	strcpy(myInfo.filepath, filename);
 	myInfo.size = statinfo.st_size;
+	myInfo.type = statinfo.st_mode;
 	myInfo.lastModifyTime = statinfo.st_mtime;
 
 	free(filepath);
@@ -139,7 +142,7 @@ int FileInfo_table_SubdirectoryFileCount(char* subdirectory_path) {
 			}
 			else if (S_ISDIR(entinfo.st_mode)) {
 				if(strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..")) {
-					num_files+=FileInfo_table_SubdirectoryFileCount(filepath);
+					num_files+=FileInfo_table_SubdirectoryFileCount(filepath) + 1;
 				}
 			}
 			free(filepath);
@@ -185,6 +188,8 @@ int FileInfo_table_Subdirectory(FileInfo_table* allfiles, char* subdirectory_pat
 			}
 			else if(S_ISDIR(entinfo.st_mode)) {
 				if(strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..")) {
+					allfiles->table[idx] = getFileInfo(relpath);
+					idx++;
 					idx = FileInfo_table_Subdirectory(allfiles, relpath, idx);
 					
 				}
@@ -233,7 +238,7 @@ FileInfo_table* getAllFilesInfo() {
 			}
 			else if (S_ISDIR(entinfo.st_mode)) {
 				if(strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..")) {
-					num_files+=FileInfo_table_SubdirectoryFileCount(filepath);
+					num_files+=FileInfo_table_SubdirectoryFileCount(filepath) + 1;
 				}
 			}
 			free(filepath);
@@ -268,6 +273,8 @@ FileInfo_table* getAllFilesInfo() {
 			}
 			else if(S_ISDIR(entinfo.st_mode)) {
 				if(strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..")) {
+					allfiles->table[idx] = getFileInfo(ent->d_name);
+					idx++;
 					idx = FileInfo_table_Subdirectory(allfiles, ent->d_name, idx);
 				}
 			}
@@ -314,14 +321,15 @@ void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs) {
 
 	int i;
 	int idx;
+	int change = 0;
 	for(i = 0; i < ftable->num_files; i++) {
-
 		filename = ftable->table[i].filepath;
 		filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
 		sprintf(filepath, "%s%s", directory, filename);
 
 		if(FilesInfo_table_search(filename, newtable) == -1 && !FileBlockList_Search(filepath, EVENT_DELETED)) {
 			printf("File deleted: %s\n",filename);
+			change = 1;
 			funcs->fileDeleted(filepath);
 		}
 		else {
@@ -338,15 +346,20 @@ void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs) {
 		idx = FilesInfo_table_search(filename, ftable);
 		if(idx == -1 && !FileBlockList_Search(filepath, EVENT_ADDED)) {
 			printf("File added: %s\n",filename);
+			change = 1;
 			funcs->fileAdded(filepath);
 		}
 		else if (ftable->table[idx].lastModifyTime != newtable->table[i].lastModifyTime  && !FileBlockList_Search(filepath, EVENT_MODIFIED)) {
 			printf("File updated: %s\n",filename);
+			change = 1;
 			funcs->fileModified(filepath);
 		}
 		else {
 			free(filepath);
 		}
+	}
+	if(change) {
+		funcs->filesChanged();
 	}
 
 }
@@ -468,7 +481,7 @@ int FileBlockList_Remove(char* filepath, int event) {
 		return ret;
 	}
 	while(curr) {
-		if(strcmp(filepath, curr->filepath) == 0) {
+		if(strncmp(filepath, curr->filepath, strlen(filepath)) == 0) {
 			if(curr->event == event) {
 				if(prev) {
 					prev->next = curr->next;
@@ -481,13 +494,11 @@ int FileBlockList_Remove(char* filepath, int event) {
 					free(curr);
 				}
 				ret = 1;
-				break;
 			}
 		}
 		prev = curr;
 		curr = curr->next;
 	}
-	free(filepath);
 	return ret;
 }
 /*
@@ -501,7 +512,8 @@ void blockFileAddListening(char* filename) {
 	//sprintf(filepath, "%s%s", directory, filename);
 
 	FileBlockList* blockAdd = calloc(1, sizeof(FileBlockList));
-	blockAdd->filepath = filename;
+	blockAdd->filepath = calloc(1, strlen(filename) * sizeof(char) + 1);
+	strcpy(blockAdd->filepath,filename);
 	blockAdd->event = EVENT_ADDED;
 
 
@@ -521,7 +533,8 @@ void blockFileWriteListening(char* filename) {
 	//sprintf(filepath, "%s%s", directory, filename);
 
 	FileBlockList* blockWrite = calloc(1, sizeof(FileBlockList));
-	blockWrite->filepath = filename;
+	blockWrite->filepath = calloc(1, strlen(filename) * sizeof(char) + 1);
+	strcpy(blockWrite->filepath,filename);
 	blockWrite->event = EVENT_MODIFIED;
 
 
@@ -539,8 +552,27 @@ void blockFileDeleteListening(char* filename) {
 	//sprintf(filepath, "%s%s", directory, filename);
 
 	FileBlockList* blockDelete = calloc(1, sizeof(FileBlockList));
-	blockDelete->filepath = filename;
+	blockDelete->filepath = calloc(1, strlen(filename) * sizeof(char) + 1);
+	strcpy(blockDelete->filepath,filename);
 	blockDelete->event = EVENT_DELETED;
+
+	struct stat entinfo;
+	char* thispath = calloc(1, strlen(directory) + strlen(filename) + 1);
+	sprintf(thispath, "%s%s", directory, filename);
+	stat(thispath, &entinfo);
+	if(S_ISDIR(entinfo.st_mode)) {
+		DIR *dir;
+		struct dirent *ent;
+		if ((dir = opendir(directory)) != NULL) {
+			while ((ent = readdir(dir)) != NULL) {
+				char* filepath = calloc(1, strlen(filename) + 1 + strlen(ent->d_name));
+				sprintf("%s/%s", filename, ent->d_name);
+				blockFileDeleteListening(filepath);
+				free(filepath);
+			}
+		}
+	}
+	free(thispath);
 
 
 	FileBlockList_Append(blockDelete);
@@ -562,8 +594,9 @@ int unblockFileAddListening(char* filename) {
 	if(!ret) {
 		printf("Unexpected unblock failure for file %s", filename);
 	}
+	ret += FileBlockList_Remove(filename, event);
 
-	return FileBlockList_Remove(filename, event);
+	return ret;
 
 }
 /*

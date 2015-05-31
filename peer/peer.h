@@ -56,7 +56,7 @@ void Filetable_peerDelete(char* name);
 * Callback sync method for the File Monitor
 *@name: name of the file to add
 */
-void Filetable_peerSync(char* name);
+//void Filetable_peerSync(char* name);
 
 
 #endif

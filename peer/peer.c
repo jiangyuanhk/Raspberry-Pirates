@@ -82,6 +82,29 @@ int connect_to_tracker() {
   printf("Successfully connected to the tracker.\n");
   return tracker_connection; 
 }
+//http://stackoverflow.com/questions/3284552/how-to-remove-a-non-empty-directory-in-c
+//although I found this on stack overflow, it uses techniques I have already implemented elsewhere
+void delete_folder_tree (const char* directory_name) {
+    DIR* dir;
+    struct dirent*  ent;
+    char buf[FILE_NAME_MAX_LEN] = {0};
+
+    dir = opendir(directory_name);
+
+    while ((ent = readdir(dir)) != NULL) {
+        sprintf(buf, "%s/%s", directory_name, ent->d_name);
+        struct stat entinfo;
+        if (S_ISDIR(entinfo.st_mode)) {
+            delete_folder_tree(buf);
+          }
+        else {
+            unlink(buf);
+          }
+    }
+
+    closedir(dir);
+    rmdir(directory_name);
+}
 
 //Thread to listen for messages from the tracker.  Upon receiving messages from the tracker, it looks
 // to sync the local files with the tracker file knowledge, creating download threads as necessary.
@@ -108,10 +131,17 @@ void* tracker_listening(void* arg) {
       
       // download the updated file if the local file does not exist (ADD)
       if(local_file == NULL) {
-         printf("File added. Need to download file: %s\n", file -> file_name);
-         blockFileAddListening(file -> file_name);
-        // pthread_t p2p_download_thread;
+        
+        blockFileAddListening(file -> file_name);
+        if(S_ISDIR(local_file -> file_type)) {
+            mkdir(local_file -> file_name, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+            printf("Directory created: %s\n", file -> file_name);
+        }
+        // else {
+        //printf("File added. Need to download file: %s\n", file -> file_name);
+        //pthread_t p2p_download_thread;
         // pthread_create(&p2p_download_thread, NULL, p2p_download, file);
+        //}
       }
 
       //download the file the file if it outdated (UPDATE)
@@ -139,7 +169,12 @@ void* tracker_listening(void* arg) {
 
         blockFileDeleteListening(file -> file_name);
 
-        if( remove(file -> file_name) == 0) {
+        if(S_ISDIR(master_file -> file_type)) {
+          delete_folder_tree(master_file -> file_name);
+          printf("Successfully removed the directory in the filesystem: %s \n", file -> file_name);
+        }
+
+        else if( remove(file -> file_name) == 0) {
           printf("Successfully removed the file in filesystem: %s \n", file -> file_name);
           file = file -> next;
         }
@@ -467,7 +502,7 @@ fileEntry_t* FileEntry_create(char* name) {
   char* filepath = calloc(1, (strlen(directory) + strlen(name) + 1) * sizeof(char));
   sprintf(filepath, "%s%s", directory, name);
 
-  fileEntry_t* newEntryPtr = filetable_createFileEntry(filepath, myInfo.size, myInfo.lastModifyTime, REGULAR_FILE);
+  fileEntry_t* newEntryPtr = filetable_createFileEntry(filepath, myInfo.size, myInfo.lastModifyTime, myInfo.type);
 
   free(myInfo.filepath);
   free(filepath);
@@ -483,7 +518,7 @@ void Filetable_peerAdd(char* name) {
   fileEntry_t* newEntryPtr = FileEntry_create(name);
   filetable_appendFileEntry(filetable, newEntryPtr);
   printf("File entry for %s added to filetable\n", name);
-  Peer_sendfiletable();
+  //Peer_sendfiletable();
 }
 /* 
 * Callback update method for the File Monitor
@@ -496,7 +531,7 @@ void Filetable_peerModify(char* name) {
 
   if (ret) {
     printf("File entry for %s modified\n", name);
-    Peer_sendfiletable();
+    //Peer_sendfiletable();
   }
   else {
     printf("Update failed: File entry for %s not found\n", name);
@@ -510,7 +545,7 @@ void Filetable_peerDelete(char* name) {
   int ret = filetable_deleteFileEntryByName(filetable, name);
   if (ret) {
     printf("File entry for %s deleted\n", name);
-    Peer_sendfiletable();
+    //Peer_sendfiletable();
   }
   else {
     printf("File entry for %s not found\n", name);
@@ -520,11 +555,11 @@ void Filetable_peerDelete(char* name) {
 * Callback sync method for the File Monitor
 *@name: name of the file to add
 */
-void Filetable_peerSync(char* name) {
+/*void Filetable_peerSync(char* name) {
   fileEntry_t* newEntryPtr = FileEntry_create(name);
   filetable_appendFileEntry(filetable, newEntryPtr);
   printf("File entry for %s synced to filetable\n", name);
-}
+}*/
 //--------------------File Monitor Callbacks-------------------------
 /*
 * Stops and cleans up the peer
@@ -606,18 +641,21 @@ int main(int argc, char *argv[]) {
   void (*Add)(char *);
   void (*Modify)(char *);
   void (*Delete)(char *);
-  void (*Sync)(char *);
+  //void (*Sync)(char *);
+  void (*SendUpdate)(void);
 
   Add = &Filetable_peerAdd;
   Modify = &Filetable_peerModify;
   Delete = &Filetable_peerDelete;
-  Sync = &Filetable_peerSync;
+  //Sync = &Filetable_peerSync;
+  SendUpdate = &Peer_sendfiletable;
 
   localFileAlerts myFuncs = {
     Add,
     Modify,
     Delete,
-    Sync
+    //Sync,
+    SendUpdate
   };
 
 
@@ -640,5 +678,5 @@ int main(int argc, char *argv[]) {
   // start the thread to listen on the p2p port for connections from other peers
   // pthread_t p2p_listening_thread;
   // pthread_create(&p2p_listening_thread, NULL, p2p_listening, &tracker_connection);
-  while(1) sleep(60);
+  while(noSIGINT) sleep(60);
 }
