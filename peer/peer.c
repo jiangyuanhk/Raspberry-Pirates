@@ -94,6 +94,7 @@ void delete_folder_tree (const char* directory_name) {
 
     while ((ent = readdir(dir)) != NULL) {
         sprintf(buf, "%s/%s", directory_name, ent->d_name);
+        printf("Deleting entity from the filetable: %s \n", ent -> d_name);
         filetable_deleteFileEntryByName(filetable, ent->d_name);
         struct stat entinfo;
         if (S_ISDIR(entinfo.st_mode)) {
@@ -190,6 +191,7 @@ void* tracker_listening(void* arg) {
           file = file -> next;
           printf("Error in removing the file from the file system.\n");
         }
+
 
         filetable_deleteFileEntryByName(filetable, file -> file_name);
       }
