@@ -57,7 +57,7 @@ void *fileMonitorThread(void* arg) {
 
 	while(running) {
 		//print table for testing
-		FileInfo_table_print(ftable);
+		//FileInfo_table_print(ftable);
 		//get the updated table
 		FileInfo_table* newtable = getAllFilesInfo();
 		//get a comparison and call the necessary functions

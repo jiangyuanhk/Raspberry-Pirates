@@ -276,12 +276,12 @@ int create_server_socket(int portNum) {
 // Register with SIGINT, so called when iterrupt the program
 // see main loop 
 void trackerStop() {
+    //close the socket binded with HANDSHAKE_PORT
+    close(svr_sd);
     // Free peer table and filetable
     peertable_destroy(myPeerTablePtr);
     filetable_destroy(myFileTablePtr);
-    //close the socket binded with HANDSHAKE_PORT
-    close(svr_sd);
-    exit(1);
+    exit(0);
 }
 
 

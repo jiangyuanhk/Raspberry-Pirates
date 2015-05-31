@@ -35,6 +35,8 @@
 int tracker_connection;     // socket connection between peer and tracker so can send / receive between the two
 int heartbeat_interval;
 int piece_len;
+//terminates the threads when this flips to 0
+int noSIGINT = 1;
 
 // char ignore_list[MAX_NUM_PEERS*MAX_NUM_PEERS][FILE_NAME_MAX_LEN];
 
@@ -195,7 +197,7 @@ void* p2p_listening(void* arg) {
   
   //Start infinite loop waiting to accept connections from peers.
   //When a peer connects, we create a upload thread to handle that connection.  
-  while(1) {
+  while(noSIGINT) {
     int peer_conn;
 
     peer_conn = accept(peer_sockfd, (struct sockaddr*) &other_peer_addr, &other_peer_addr_len);
@@ -425,7 +427,7 @@ void* file_monitor(void* arg) {
 
 void* keep_alive(void* arg) {
   int interval = *(int*) arg;
-  while(1) {
+  while(noSIGINT) {
     sleep(interval);
     //TODO
     //send the keep alive message
@@ -489,10 +491,23 @@ void Filetable_peerDelete(char* name) {
   }
 }
 //--------------------File Monitor Callbacks-------------------------
-
+/*
+* Stops and cleans up the peer
+*/
+void peer_stop() {
+  noSIGINT = 0;
+  FileMonitor_close();
+  close(tracker_connection);
+  filetable_destroy(filetable);
+  peertable_destroy(peertable);
+  free(directory);
+  exit(0);
+}
 int main(int argc, char *argv[]) {
 
-  
+  //register a signal handler which is used to terminate the process
+  signal(SIGINT, peer_stop);
+
   //Initialize the directory to sync
   printf("Read in config file to get directory.\n");
   directory = readConfigFile("config");
@@ -586,8 +601,4 @@ int main(int argc, char *argv[]) {
   // pthread_t p2p_listening_thread;
   // pthread_create(&p2p_listening_thread, NULL, p2p_listening, &tracker_connection);
   while(1) sleep(60);
-
-  /*place in sigint
-  FileMonitor_close();
-  */
 }
