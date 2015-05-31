@@ -107,7 +107,7 @@ void FileMonitor_close() {
 
 FileInfo getFileInfo(char* filename) {
 	char* filepath;
-	if(strncmp(name, directory, strlen(directory)) != 0) {
+	if(strncmp(filename, directory, strlen(directory)) != 0) {
 		filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
 		sprintf(filepath, "%s%s", directory, filename);
 	}
