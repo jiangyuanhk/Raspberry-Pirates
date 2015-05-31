@@ -122,7 +122,7 @@ int receive_data_p2p(int peer_tracker_conn, file_metadata_t* metadata){
 
   char int_buf[10];
   memset(int_buf, 0, 10);
-  sprintf(file_path, "%s.temp%d", metadata -> filename, metadata -> piece_num);
+  sprintf(file_path, "/tmp/%s.%d", metadata -> filename, metadata -> piece_num);
   printf("File Path outputing file to%s\n", file_path);
 
   

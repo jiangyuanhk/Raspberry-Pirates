@@ -1,5 +1,5 @@
-#ifndef FILE_MONITOR_H
-#define FILE_MONITOR_H
+// #ifndef FILE_MONITOR_H
+// #define FILE_MONITOR_H
 
 #include <pthread.h>
 
@@ -34,4 +34,4 @@ int find_in_blocklist(blockList_t* blocklist, char* filepath);
 int remove_from_blocklist(blockList_t* blocklist, char* filepath);
 
 
-#endif
+// #endif

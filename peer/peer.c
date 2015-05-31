@@ -22,12 +22,13 @@
 #include <sys/stat.h>
 
 #include "peer.h"
-#include "file_monitor.h"
+// #include "file_monitor.h"
 #include "../common/constants.h"
 #include "../common/pkt.h"
 #include "../common/filetable.h"
 #include "../common/peertable.h"
 #include "peer_helpers.h"
+#include "../fileMonitor/fileMonitor.h"
 
 
 // Globals Variables
@@ -40,8 +41,8 @@ int piece_len;
 char* directory;
 fileTable_t* filetable;         //local file table to keep track of files in the directory
 peerTable_t* peertable;         //peer table to keep track of ongoing downloading tasks
-blockList_t* update_blocklist;  //add and update block list
-blockList_t* delete_blocklist;  //delete block list
+// blockList_t* update_blocklist;  //add and update block list
+// blockList_t* delete_blocklist;  //delete block list
 
 //Function to connect the peer to the tracker on the HANDSHAKE Port.
 // Returns -1 if it failed to connect.  Otherwise, returns the sockfd
@@ -104,12 +105,19 @@ void* tracker_listening(void* arg) {
       //check to see if the file exists locally
       fileEntry_t* local_file = filetable_searchFileByName(filetable, file -> file_name); 
       
-      // download the updated file if the local file does not exist or the local file is outdated
-      if(local_file == NULL || (file -> timestamp) > (local_file -> timestamp) ) { 
+      // download the updated file if the local file does not exist (ADD)
+      if(local_file == NULL) {
+         printf("File added. Need to download file: %s\n", file -> file_name);
+         blockFileAddListening(file -> file_name);
+        // pthread_t p2p_download_thread;
+        // pthread_create(&p2p_download_thread, NULL, p2p_download, file);
+      }
+
+      //download the file the file if it outdated (UPDATE)
+      else if (file -> timestamp) > (local_file -> timestamp) ) { 
         printf("File updated or added.  Need to download file: %s\n", file -> file_name);
+        blockFileWriteListening(file -> file_name);
         // //TODO make sure that the file is not already being downloaded and if not, add to the peer table
-        // //TODO add to the update-add table
-        // add_file_to_blocklist(update_blocklist, file -> file_name);
         // pthread_t p2p_download_thread;
         // pthread_create(&p2p_download_thread, NULL, p2p_download, file);
       }
@@ -128,8 +136,7 @@ void* tracker_listening(void* arg) {
       //if the file is not in the master file table and is locally, then delete it
       if (master_file == NULL) {
 
-        //add file to ignore list
-        add_file_to_blocklist(delete_blocklist, file -> file_name);
+        blockFileDeleteListening(file -> file_name);
 
         if( remove(file -> file_name) == 0) {
           printf("Successfully removed the file in filesystem: %s \n", file -> file_name);

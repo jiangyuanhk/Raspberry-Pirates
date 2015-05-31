@@ -177,7 +177,7 @@ int main() {
   for(j = 1; j <= entry -> num_pieces; j++) {
 
       char temp_filepath[300];
-      sprintf(temp_filepath, "%s.temp%d", entry -> file_name, j);
+      sprintf(temp_filepath, "/tmp/%s.%d", entry -> file_name, j);
       FILE* temp_file = fopen(temp_filepath, "r");
       printf("Copying File into main file: %s\n", temp_filepath);
 
