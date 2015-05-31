@@ -495,7 +495,6 @@ fileEntry_t* FileEntry_create(char* name) {
   fileEntry_t* newEntryPtr = filetable_createFileEntry(filepath, myInfo.size, myInfo.lastModifyTime, myInfo.type);
 
   free(myInfo.filepath);
-  free(filename);
 
   return newEntryPtr;
   
@@ -515,7 +514,9 @@ void Filetable_peerAdd(char* name) {
 *@name: name of the file to update
 */
 void Filetable_peerModify(char* name) {
-  fileEntry_t* oldEntryPtr = filetable_searchFileByName(filetable, name);
+  char* filepath = calloc(1, (strlen(directory) + strlen(name) + 1) * sizeof(char));
+  sprintf(filepath, "%s%s", directory, name);
+  fileEntry_t* oldEntryPtr = filetable_searchFileByName(filetable, filepath);
   fileEntry_t* newEntryPtr = FileEntry_create(name);
   int ret = filetable_updateFile(oldEntryPtr, newEntryPtr, filetable->filetable_mutex);
 

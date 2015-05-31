@@ -364,13 +364,13 @@ void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs) {
 			if(!FileBlockList_Search(filepath, EVENT_ADDED)) {
 				printf("File added: %s\n",filename);
 				change = 1;
-				funcs->fileAdded(filepath);
+				funcs->fileAdded(filename);
 			}
 		}
 		else if (ftable->table[idx].lastModifyTime != newtable->table[i].lastModifyTime  && !FileBlockList_Search(filepath, EVENT_MODIFIED)) {
 			printf("File updated: %s\n",filename);
 			change = 1;
-			funcs->fileModified(filepath);
+			funcs->fileModified(filename);
 		}
 		free(filepath);
 	}
