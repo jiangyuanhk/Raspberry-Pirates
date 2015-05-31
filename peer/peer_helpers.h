@@ -89,5 +89,7 @@ void add_entry_to_downloadtable(downloadTable_t* downloadtable, downloadEntry_t*
 //remove and entry from the download table
 int remove_entry_from_downloadtable(downloadTable_t* downloadtable, char* filename);
 
+downloadEntry_t* search_downloadtable_for_entry(downloadTable_t* downloadtable, char* filename);
+
 
 #endif

@@ -395,7 +395,7 @@ void downloadtable_destroy(downloadTable_t* downloadtable){
 
 //add an entry that has already been init'ed with init downloadEntry to the download table
 void add_entry_to_downloadtable(downloadTable_t* downloadtable, downloadEntry_t* entry) {
-  if(downloadtable->size == 0){
+  if(downloadtable->size == 0) {
     downloadtable->head = entry;
     downloadtable->tail = entry;
   } 
@@ -409,7 +409,7 @@ void add_entry_to_downloadtable(downloadTable_t* downloadtable, downloadEntry_t*
 } 
 
 
-downloadEntry_t* search_downloadtable_for_entry(downloadTable_t* downloadtable, char* filename){
+downloadEntry_t* search_downloadtable_for_entry(downloadTable_t* downloadtable, char* filename) {
   if(downloadtable->size > 0){
     downloadEntry_t* iter = downloadtable->head;
     
@@ -426,7 +426,7 @@ downloadEntry_t* search_downloadtable_for_entry(downloadTable_t* downloadtable, 
 
 int remove_entry_from_downloadtable(downloadTable_t* downloadtable, char* filename){
 
-  downloadEntry_t* dummy = (downloadEntry_t*)malloc(sizeof(downloadEntry_t));
+  downloadEntry_t* dummy = (downloadEntry_t*) malloc(sizeof(downloadEntry_t));
   dummy->next = downloadtable->head;
 
   downloadEntry_t* iter = dummy;

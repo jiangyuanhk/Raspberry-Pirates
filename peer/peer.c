@@ -164,14 +164,12 @@ void* tracker_listening(void* arg) {
         printf("File updated or added.  Need to download file: %s\n", file -> file_name);
         blockFileWriteListening(file -> file_name);
         
-        //TODO make sure that the file is not already being downloaded and if not, add to the peer table
-        //if (search_downloadtable_for_entry(downloadtable, file -> file_name)) {
-            //PTHREAD STUFF
-        //}
-        //otherwise we do not want to download again as it is already downloading
-        //prinf that
-        pthread_t p2p_download_file_thread;
-        pthread_create(&p2p_download_file_thread, NULL, p2p_download_file, file);
+        //make sure that the file is not already being downloaded and if not, add to the peer table
+        if (search_downloadtable_for_entry(downloadtable, file -> file_name) == NULL) {
+          pthread_t p2p_download_file_thread;
+          pthread_create(&p2p_download_file_thread, NULL, p2p_download_file, file);
+        }
+
       }
 
       file = file -> next;  //move to next item in file table from tracker
@@ -350,14 +348,6 @@ void* p2p_download(void* arg) {
     }
   }
 
-//   //TODO
-//   //handshake with the tracker
-//   //send the filetable so that I can be added to the iplist[0]
-
-//   //TODO
-//   //remove this from the peer table so know that the download is completed
-//   //close the connection
-
   close(peer_conn);
   pthread_exit(0);
 }
@@ -366,7 +356,10 @@ void* p2p_download_file(void* arg) {
 
   fileEntry_t* file = (fileEntry_t*) arg;
 
+
   downloadEntry_t* entry = init_downloadEntry(file, piece_len);
+  add_entry_to_downloadtable(downloadtable, entry);
+  printf("Add File to Download Table: %s\n", file -> file_name);
 
   // this is the download file thread that should spin off
   int i = 0;
@@ -417,7 +410,14 @@ void* p2p_download_file(void* arg) {
     unblockFileAddListening(entry -> file_name);
   }
 
-  //TODO - Remove the entry from the download list
+//   //TODO
+//   //handshake with the tracker
+//   //send the filetable so that I can be added to the iplist[0]
+
+
+  //remove this from the peer table so know that the download is completed
+  remove_entry_from_downloadtable(downloadtable, file -> file_name);
+
   pthread_exit(NULL);
 }
 
@@ -522,6 +522,7 @@ void Filetable_peerAdd(char* name) {
   printf("File entry for %s added to filetable\n", name);
   //Peer_sendfiletable();
 }
+
 /* 
 * Callback update method for the File Monitor
 *@name: name of the file to update
