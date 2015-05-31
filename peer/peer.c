@@ -114,7 +114,7 @@ void* tracker_listening(void* arg) {
       }
 
       //download the file the file if it outdated (UPDATE)
-      else if (file -> timestamp) > (local_file -> timestamp) ) { 
+      else if ( (file -> timestamp) > (local_file -> timestamp) ) { 
         printf("File updated or added.  Need to download file: %s\n", file -> file_name);
         blockFileWriteListening(file -> file_name);
         // //TODO make sure that the file is not already being downloaded and if not, add to the peer table
@@ -216,6 +216,8 @@ void* p2p_listening(void* arg) {
    information about the start and send_size as well as the file name.  Then, it receives the file and closes
    the connection */
 void* p2p_download(void* arg) {
+
+  //for each ip address for the entry entry, start a piece thread
   fileEntry_t* file = (fileEntry_t*) arg;
 
   struct sockaddr_in servaddr;
