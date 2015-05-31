@@ -106,8 +106,14 @@ void FileMonitor_close() {
 */
 
 FileInfo getFileInfo(char* filename) {
-	char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
-	sprintf(filepath, "%s%s", directory, filename);
+	char* filepath;
+	if(strncmp(name, directory, strlen(directory)) != 0) {
+		filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
+		sprintf(filepath, "%s%s", directory, filename);
+	}
+	else {
+		filepath = filename;
+	}
 	struct stat statinfo;
 	if(stat(filepath, &statinfo) == -1) {
 		free(filepath);
