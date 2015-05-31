@@ -437,6 +437,19 @@ void* keep_alive(void* arg) {
 
 //--------------------File Monitor Callbacks-------------------------
 /*
+*Sends the peers filetable to the tracker
+*/
+void Peer_sendfiletable() {
+  pthread_mutex_lock(filetable -> filetable_mutex);
+  ptp_peer_t* pkt = pkt_create_peerPkt();
+  char ip_address[IP_LEN];
+  get_my_ip(ip_address);
+  pkt_config_peerPkt(pkt, FILE_UPDATE, ip_address, HANDSHAKE_PORT, filetable -> size, filetable -> head);
+  pthread_mutex_unlock(filetable -> filetable_mutex);
+  pkt_peer_sendPkt(tracker_connection, pkt, filetable -> filetable_mutex);
+  printf("Successfully send the filetable packet.\n");
+}
+/*
 * Creates a fileEntry_t from a file name
 *
 *@name: name to return
@@ -460,14 +473,19 @@ fileEntry_t* FileEntry_create(char* name) {
   
 }
 /* 
-* Callback methods for the File Monitor
-*@name: name of the file to modify
+* Callback add method for the File Monitor
+*@name: name of the file to add
 */
 void Filetable_peerAdd(char* name) {
   fileEntry_t* newEntryPtr = FileEntry_create(name);
   filetable_appendFileEntry(filetable, newEntryPtr);
   printf("File entry for %s added to filetable\n", name);
+  Peer_sendfiletable();
 }
+/* 
+* Callback update method for the File Monitor
+*@name: name of the file to update
+*/
 void Filetable_peerModify(char* name) {
   fileEntry_t* oldEntryPtr = filetable_searchFileByName(filetable, name);
   fileEntry_t* newEntryPtr = FileEntry_create(name);
@@ -475,19 +493,34 @@ void Filetable_peerModify(char* name) {
 
   if (ret) {
     printf("File entry for %s modified\n", name);
+    Peer_sendfiletable();
   }
   else {
     printf("Update failed: File entry for %s not found\n", name);
   }
 }
+/* 
+* Callback delete method for the File Monitor
+*@name: name of the file to delete
+*/
 void Filetable_peerDelete(char* name) {
   int ret = filetable_deleteFileEntryByName(filetable, name);
   if (ret) {
     printf("File entry for %s deleted\n", name);
+    Peer_sendfiletable();
   }
   else {
     printf("File entry for %s not found\n", name);
   }
+}
+/* 
+* Callback sync method for the File Monitor
+*@name: name of the file to add
+*/
+void Filetable_peerSync(char* name) {
+  fileEntry_t* newEntryPtr = FileEntry_create(name);
+  filetable_appendFileEntry(filetable, newEntryPtr);
+  printf("File entry for %s synced to filetable\n", name);
 }
 //--------------------File Monitor Callbacks-------------------------
 /*
@@ -526,20 +559,62 @@ int main(int argc, char *argv[]) {
   //filetable = create_local_filetable(directory);
   filetable = filetable_init();
   //filetable_printFileTable(filetable);
+  //Initialize the peer table as empty
+  peertable = malloc(sizeof(peerTable_t)); 
+
+  /*update_blocklist = blocklist_init();
+  delete_blocklist = blocklist_init();*/
+
+  //Attempt to establish connection with tracker
+  if ( (tracker_connection = connect_to_tracker()) < 0) {
+    printf("Failed to connect to tracker. Exiting\n");
+    exit(0);
+  }
+
+
+  printf("Connected\n");
+
+  //  Send a register packet to the tracker
+  if (send_register_packet(tracker_connection) < 0) {
+    printf("Failed to send register packet\n");
+    return -1; // maybe exit();
+  }
+
+  printf("Successfully sent register packet.\n");
+
+  //Receive the acknowledgement of the register packet from the tracker
+  printf("Receiving registered handshake packet from the tracker.\n");
+  ptp_tracker_t* packet = calloc(1, sizeof(ptp_tracker_t));
+  pkt_peer_recvPkt(tracker_connection, packet);
+  heartbeat_interval = packet -> heartbeatinterval;
+  piece_len = packet -> piece_len;  
+  printf("Interval: %d  Piece Len: %d   FT-Size: %d \n", packet -> heartbeatinterval, packet -> piece_len, packet -> filetablesize);
+  free(packet);
+
+  // //Start the keep alive thread
+  // pthread_t keep_alive_thread;
+  // pthread_create(&keep_alive_thread, NULL, keep_alive, &keep_alive_interval);
+
+  // start the thread to listen for data from the tracker
+  pthread_t tracker_listening_thread;
+  pthread_create(&tracker_listening_thread, NULL, tracker_listening, (void*)0);
 
   //--------------------File Monitor Thread-------------------------
   void (*Add)(char *);
   void (*Modify)(char *);
   void (*Delete)(char *);
+  void (*Sync)(char *);
 
   Add = &Filetable_peerAdd;
   Modify = &Filetable_peerModify;
   Delete = &Filetable_peerDelete;
+  Sync = &Filetable_peerSync;
 
   localFileAlerts myFuncs = {
     Add,
     Modify,
-    Delete
+    Delete,
+    Sync
   };
 
 
@@ -554,44 +629,7 @@ int main(int argc, char *argv[]) {
     printf("Current working dir: %s\n", cwd1);
 
 
-  //Initialize the peer table as empty
-  peertable = malloc(sizeof(peerTable_t)); 
-
-  /*update_blocklist = blocklist_init();
-  delete_blocklist = blocklist_init();*/
-
-  //Attempt to establish connection with tracker
-  if ( (tracker_connection = connect_to_tracker()) < 0) {
-    printf("Failed to connect to tracker. Exiting\n");
-    exit(0);
-  }
-
-  printf("Connected\n");
-
-  //  Send a register packet to the tracker
-  if (send_register_packet(tracker_connection) < 0) {
-    printf("Failed to send register packet\n");
-    return -1; // maybe exit();
-  }
-
-  printf("Successfully sent register packet.\n");
-
-  //Receive the acknowledgement of the register packet from the tracker
-  printf("Receiving registed handshake packet from the tracker.\n");
-  ptp_tracker_t* packet = calloc(1, sizeof(ptp_tracker_t));
-  pkt_peer_recvPkt(tracker_connection, packet);
-  heartbeat_interval = packet -> heartbeatinterval;
-  piece_len = packet -> piece_len;  
-  printf("Inteval: %d  Piece Len: %d   FT-Size: %d \n", packet -> heartbeatinterval, packet -> piece_len, packet -> filetablesize);
-  free(packet);
-
-  // //Start the keep alive thread
-  // pthread_t keep_alive_thread;
-  // pthread_create(&keep_alive_thread, NULL, keep_alive, &keep_alive_interval);
-
-  // start the thread to listen for data from the tracker
-  pthread_t tracker_listening_thread;
-  pthread_create(&tracker_listening_thread, NULL, tracker_listening, (void*)0);
+  
 
   //pthread_t file_monitor_thread;
   //pthread_create(&file_monitor_thread, NULL, file_monitor, (void*)0);
