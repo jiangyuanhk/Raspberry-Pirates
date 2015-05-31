@@ -6,7 +6,6 @@
 #include <pthread.h>
 
 
-
 typedef struct downloadPiece {
   char ip[IP_LEN];                      // IP address from which the piece was downloaded
   int sockfd;                           // the TCP connection to the remote peer
@@ -50,7 +49,11 @@ void append_piece_to_list(downloadEntry_t* download_entry, downloadPiece_t* piec
 
 downloadPiece_t* get_downloadPiece(downloadEntry_t* download_entry);
 
+void readd_piece_to_list(downloadEntry_t* entry, downloadPiece_t* piece);
+
 arg_struct_t* create_arg_struct(downloadEntry_t* download_entry, char* ip);
+
+
 
 #endif
 
