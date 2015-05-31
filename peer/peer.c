@@ -148,10 +148,10 @@ void* tracker_listening(void* arg) {
       if(local_file == NULL) {
         
         blockFileAddListening(file -> file_name);
-        if(S_ISDIR(local_file -> file_type)) {
-            mkdir(local_file -> file_name, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        if(S_ISDIR(file -> file_type)) {
+            mkdir(file -> file_name, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
             //add the directory to the local filetable
-            fileEntry_t* new_folder = FileEntry_create(local_file -> file_name);
+            fileEntry_t* new_folder = FileEntry_create(file -> file_name);
             filetable_appendFileEntry(filetable, new_folder);
             printf("Directory created: %s\n", file -> file_name);
         }
