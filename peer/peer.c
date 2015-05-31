@@ -425,13 +425,16 @@ void* file_monitor(void* arg) {
 */
 
 void* keep_alive(void* arg) {
-  int interval = *(int*) arg;
+  //int interval = *(int*) arg;
+  ptp_peer_t* pkt = pkt_create_peerPkt();
+  char ip_address[IP_LEN];
+  get_my_ip(ip_address);
+  pkt_config_peerPkt(pkt, KEEP_ALIVE, ip_address, HANDSHAKE_PORT, 0, NULL);
   while(noSIGINT) {
-    sleep(interval);
-    //TODO
-    //send the keep alive message
+    pkt_peer_sendPkt(tracker_connection, pkt, NULL);
+    sleep(heartbeat_interval);
   }
-
+  free(pkt);
   pthread_exit(NULL);
 }
 
@@ -591,9 +594,9 @@ int main(int argc, char *argv[]) {
   printf("Interval: %d  Piece Len: %d   FT-Size: %d \n", packet -> heartbeatinterval, packet -> piece_len, packet -> filetablesize);
   free(packet);
 
-  // //Start the keep alive thread
-  // pthread_t keep_alive_thread;
-  // pthread_create(&keep_alive_thread, NULL, keep_alive, &keep_alive_interval);
+  //Start the keep alive thread
+  pthread_t keep_alive_thread;
+  pthread_create(&keep_alive_thread, NULL, keep_alive, NULL);
 
   // start the thread to listen for data from the tracker
   pthread_t tracker_listening_thread;
