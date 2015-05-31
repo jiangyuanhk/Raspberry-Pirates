@@ -94,6 +94,7 @@ void delete_folder_tree (const char* directory_name) {
 
     while ((ent = readdir(dir)) != NULL) {
         sprintf(buf, "%s/%s", directory_name, ent->d_name);
+        filetable_deleteFileEntryByName(filetable, ent->d_name);
         struct stat entinfo;
         if (S_ISDIR(entinfo.st_mode)) {
             delete_folder_tree(buf);
@@ -136,12 +137,15 @@ void* tracker_listening(void* arg) {
         blockFileAddListening(file -> file_name);
         if(S_ISDIR(local_file -> file_type)) {
             mkdir(local_file -> file_name, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+            //add the directory to the local filetable
+            fileEntry_t* new_folder = FileEntry_create(local_file -> file_name);
+            filetable_appendFileEntry(filetable, new_folder);
             printf("Directory created: %s\n", file -> file_name);
         }
         else {
           printf("File added. Need to download file: %s\n", file -> file_name);
           pthread_t p2p_download_thread;
-          pthread_create(&p2p_download_thread, NULL, p2p_download, file);
+          pthread_create(&p2p_download_thread, NULL, p2p_download_file, file);
         }
       }
 
@@ -150,7 +154,7 @@ void* tracker_listening(void* arg) {
         printf("File updated or added.  Need to download file: %s\n", file -> file_name);
         blockFileWriteListening(file -> file_name);
         
-        // //TODO make sure that the file is not already being downloaded and if not, add to the peer table
+        //TODO make sure that the file is not already being downloaded and if not, add to the peer table
         pthread_t p2p_download_file_thread;
         pthread_create(&p2p_download_file_thread, NULL, p2p_download_file, file);
       }
@@ -165,14 +169,13 @@ void* tracker_listening(void* arg) {
 
       //check to see if the local file exists in the tracker table
       fileEntry_t* master_file = filetable_searchFileByName(tracker_filetable, file -> file_name);
-
       //if the file is not in the master file table and is locally, then delete it
       if (master_file == NULL) {
 
         blockFileDeleteListening(file -> file_name);
 
-        if(S_ISDIR(master_file -> file_type)) {
-          delete_folder_tree(master_file -> file_name);
+        if(S_ISDIR(file -> file_type)) {
+          delete_folder_tree(file -> file_name);
           printf("Successfully removed the directory in the filesystem: %s \n", file -> file_name);
         }
 
@@ -185,6 +188,8 @@ void* tracker_listening(void* arg) {
           file = file -> next;
           printf("Error in removing the file from the file system.\n");
         }
+
+        filetable_deleteFileEntryByName(filetable, file -> file_name);
       }
       file = file -> next;
     }
@@ -320,82 +325,6 @@ void* p2p_download(void* arg) {
   pthread_exit(0);
 }
 
-// /* Thread to download a file from a peer.  First establishes the connecting with a peer.
-//    Then, sends a file_metadata_t to the peer to let it know the name of the file it needs to download.
-//    Next, it receives a file_metadata_t from the peer to let it know its about to receive the data and containing 
-//    information about the start and send_size as well as the file name.  Then, it receives the file and closes
-//    the connection */
-// void* p2p_download(void* arg) {
-
-//   //for each ip address for the entry entry, start a piece thread
-//   fileEntry_t* file = (fileEntry_t*) arg;
-
-//   struct sockaddr_in servaddr;
-//   servaddr.sin_family = AF_INET;
-//   servaddr.sin_addr.s_addr = inet_addr(file -> iplist[0]);      //just use the first ip in the list
-//   servaddr.sin_port = htons(P2P_PORT);
-
-//   int peer_conn = socket(AF_INET, SOCK_STREAM, 0);  
-
-//   if(peer_conn < 0) {
-//     printf("Error creating socket in p2p download.\n");
-//     pthread_exit(NULL);
-//   }
-
-//   if( connect(peer_conn, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0){
-//     printf("Failed to connect ot local ON process.\n");
-//     pthread_exit(NULL);
-//   }
-
-//   printf("Connected to a peer upload thread.\n");
-
-//   //Download data from the peer
-//   //Send the name of the file you need to download
-//   file_metadata_t* meta_info  = send_meta_data_info(peer_conn, file -> file_name, 0, 0, 0);
-//   free(meta_info);
-
-//   //Recv the file
-//   file_metadata_t* metadata = calloc(1, sizeof(file_metadata_t));
-//   int ret1 = receive_meta_data_info(peer_conn, metadata);
-//   int ret2 = receive_data_p2p(peer_conn, metadata);
-//   printf("Ret1: %d    Ret2: %d \n", ret1, ret2);
-//   free(metadata);
-
-//   //TODO
-//   //handshake with the tracker
-//   //send the filetable so that I can be added to the iplist[0]
-
-//   //TODO
-//   //remove this from the peer table so know that the download is completed
-//   //close the connection
-
-//   close(peer_conn);
-//   pthread_exit(NULL);
-// }
-
-
-/* Thread to upload a file to a peer. First accepts the connection from a peer.
-   Then, receives a file_metadata_t from the peer to let it know the name of the file it needs to upload.
-   Next, it sends a file_metadata_t to the peer to let it know its about to send the data and containing 
-   information about the start and send_size as well as the file name.  Then, it sends the file and closes
-   the connection */
-// void* p2p_upload(void* arg) {
-//   int peer_conn = *(int*) arg;  //gonna be casting issue here
-  
-//   //get the filename of the file to send  
-//   file_metadata_t* recv_metadata = malloc(sizeof(file_metadata_t));
-//   receive_meta_data_info(peer_conn, recv_metadata);
-
-//   //Sending a file p2p 
-//   printf("Sending a File: %s \n", recv_metadata -> filename);
-//   file_metadata_t* metadata = send_meta_data_info(peer_conn, recv_metadata -> filename, 0, get_file_size(recv_metadata -> filename), 0);
-//   send_data_p2p(tracker_connection, metadata);
-//   free(metadata);
-//   free(recv_metadata);
-//   close(peer_conn);
-//   pthread_exit(NULL);
-// }
-
 void* p2p_download_file(void* arg) {
 
   fileEntry_t* file = (fileEntry_t*) arg;
@@ -431,8 +360,27 @@ void* p2p_download_file(void* arg) {
   utime(entry -> file_name, newTime);
   printf("Updated file time. \n");
 
-  //sleep monitor poll interval
-  // remove from the blocklist because the file has been updated 
+  //add the file to the local filetable
+  fileEntry_t* new_file = FileEntry_create(entry -> file_name);
+  filetable_appendFileEntry(filetable, new_file);
+
+  fileEntry_t* old_entry = filetable_searchFileByName(filetable, entry -> file_name);
+
+  //if the old entry exists, it is a modfy so update
+  if (old_entry) {
+    filetable_updateFile(old_entry, new_file, filetable -> filetable_mutex);
+    free(new_file);
+    sleep(MONITOR_POLL_INTERVAL);
+    unblockFileWriteListening(entry -> file_name);
+  }
+
+  else {
+    filetable_appendFileEntry(filetable, new_file);
+    sleep(MONITOR_POLL_INTERVAL);
+    unblockFileAddListening(entry -> file_name);
+  }
+
+  //TODO - Remove the entry from the download list
   pthread_exit(NULL);
 }
 
@@ -722,6 +670,8 @@ void peer_stop() {
   free(directory);
   exit(0);
 }
+
+
 int main(int argc, char *argv[]) {
 
   //register a signal handler which is used to terminate the process
@@ -749,9 +699,6 @@ int main(int argc, char *argv[]) {
   //Initialize the peer table as empty
   downloadtable = init_downloadTable();
 
-  /*update_blocklist = blocklist_init();
-  delete_blocklist = blocklist_init();*/
-
   //Attempt to establish connection with tracker
   if ( (tracker_connection = connect_to_tracker()) < 0) {
     printf("Failed to connect to tracker. Exiting\n");
@@ -761,12 +708,21 @@ int main(int argc, char *argv[]) {
 
   printf("Connected\n");
 
-  //  Send a register packet to the tracker
-  if (send_register_packet(tracker_connection) < 0) {
+  //Send a register packet
+  ptp_peer_t* register_pkt = pkt_create_peerPkt();
+  char* ip = malloc(IP_LEN);
+  memset(ip, 0, IP_LEN);
+  get_my_ip(ip);
+  pkt_config_peerPkt(register_pkt, REGISTER, ip, P2P_PORT, 0, NULL);
+ 
+  if (pkt_peer_sendPkt(tracker_connection, register_pkt, NULL) < 0){
     printf("Failed to send register packet\n");
+    free(ip);
+    free(register_pkt);
     return -1; // maybe exit();
   }
-
+  free(ip);
+  free(register_pkt);
   printf("Successfully sent register packet.\n");
 
   //Receive the acknowledgement of the register packet from the tracker
@@ -778,13 +734,14 @@ int main(int argc, char *argv[]) {
   printf("Interval: %d  Piece Len: %d   FT-Size: %d \n", packet -> heartbeatinterval, packet -> piece_len, packet -> filetablesize);
   free(packet);
 
-  //Start the keep alive thread
-  pthread_t keep_alive_thread;
-  pthread_create(&keep_alive_thread, NULL, keep_alive, NULL);
 
-  // start the thread to listen for data from the tracker
-  pthread_t tracker_listening_thread;
-  pthread_create(&tracker_listening_thread, NULL, tracker_listening, (void*)0);
+  // //Start the keep alive thread
+  // pthread_t keep_alive_thread;
+  // pthread_create(&keep_alive_thread, NULL, keep_alive, NULL);
+
+  // // start the thread to listen for data from the tracker
+  // pthread_t tracker_listening_thread;
+  // pthread_create(&tracker_listening_thread, NULL, tracker_listening, (void*)0);
 
   //--------------------File Monitor Thread-------------------------
   void (*Add)(char *);
@@ -818,6 +775,13 @@ int main(int argc, char *argv[]) {
   if (getcwd(cwd1, sizeof(cwd1)) != NULL)
     printf("Current working dir: %s\n", cwd1);
 
+  printf("Begin initial sync with the peer. Send file table to peer.\n");
+  Peer_sendfiletable();
+
+  printf("Begin the tracker listening thread. \n");
+  // start the thread to listen for data from the tracker
+  pthread_t tracker_listening_thread;
+  pthread_create(&tracker_listening_thread, NULL, tracker_listening, (void*)0);
 
   // pthread_t file_monitor_thread;
   // pthread_create(&file_monitor_thread, NULL, file_monitor, (void*)0);

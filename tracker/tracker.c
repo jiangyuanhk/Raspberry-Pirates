@@ -298,7 +298,7 @@ int initial_sync_with_peer(int conn) {
   printf("File Table Size: %d\n", pkt_recv.filetablesize);
 
   //if receive the wrong kind of table, reset
-  if (pkt_recv.type != 1) return -1;
+  if (pkt_recv.type != FILE_UPDATE) return -1;
   printf("Received a file update packet!\n");
 
   fileTable_t* peer_filetable = filetable_convertEntriesToFileTable(pkt_recv.filetableHeadPtr);
@@ -427,21 +427,18 @@ int initial_sync_with_peer(int conn) {
       peertable_printPeerTable(myPeerTablePtr);
       printf("Peer table updated successfully.\n");
 
-      //create a handshake thread to handle messages from this particular peer
-      //receive messages from this peer and respond if needed
-      //by using the peer-tracker handshake protocal
-      printf("Initialize the handshake thread.\n");
-      pthread_t handshake_thread;
-      pthread_create(&handshake_thread, NULL, handshake, &connfd);
-
       printf("Try to send response to the peer with heartbeat and piece len.\n");
 			//create a pkt to send back to peer, for peer to set up itself
 			//the pkt contains info: 1. HEATBEAT_INTERVAL 2. PIECE_LENGTH 3. trakcer's fileTable(including size and the linkedlist)
 			ptp_tracker_t* setup = pkt_create_trackerPkt();
-			pkt_config_trackerPkt(setup, HEARTBEAT_INTERVAL, PIECE_LENGTH, myFileTablePtr->size, myFileTablePtr->head);
+			pkt_config_trackerPkt(setup, HEARTBEAT_INTERVAL, PIECE_LENGTH, 0, NULL);
 
 			//send the configured pkt --> peer
-			pkt_tracker_sendPkt(connfd, setup, myFileTablePtr -> filetable_mutex);
+			if (pkt_tracker_sendPkt(connfd, setup, myFileTablePtr -> filetable_mutex) < 0) {
+        printf("Error sending the register packet\n");
+        free(setup);
+        continue;
+      }
 			
       printf("Successfully sent the packet.\n");
 
@@ -452,6 +449,16 @@ int initial_sync_with_peer(int conn) {
         close(connfd);
         continue;
       }
+
+      printf("Successfully sync the local peer. Beginning handshake thread.\n");
+
+      //create a handshake thread to handle messages from this particular peer
+      //receive messages from this peer and respond if needed
+      //by using the peer-tracker handshake protocal
+      printf("Initialize the handshake thread.\n");
+      pthread_t handshake_thread;
+      pthread_create(&handshake_thread, NULL, handshake, &connfd);
+
 		}
 	}
 }

@@ -81,7 +81,7 @@ int pkt_tracker_recvPkt(int connfd, ptp_peer_t* pkt){
 }
 
 
-int pkt_peer_sendPkt(int connfd, ptp_peer_t* pkt, pthread_mutex_t* mutex){
+int pkt_peer_sendPkt(int connfd, ptp_peer_t* pkt, pthread_mutex_t* mutex) {
 	
 
 
@@ -226,41 +226,41 @@ ptp_peer_t* pkt_create_peerPkt(){
 }
 
 
-// Function that sends a register packet upon first login.
-int send_register_packet(int tracker_conn) {
-  int type = REGISTER;
-  int filetablesize = 0;
-  int port = P2P_PORT;
+// // Function that sends a register packet upon first login.
+// int send_register_packet(int tracker_conn) {
+//   int type = REGISTER;
+//   int filetablesize = 0;
+//   int port = P2P_PORT;
 
-  char* ip = malloc(IP_LEN);
-  memset(ip, 0, IP_LEN);
-  get_my_ip(ip);
+//   char* ip = malloc(IP_LEN);
+//   memset(ip, 0, IP_LEN);
+//   get_my_ip(ip);
 
-  if(send(tracker_conn, &(type), sizeof(int), 0) < 0){
-    printf("err in %s: send type failed\n", __func__);
-    return -1;
-  }
+//   if(send(tracker_conn, &(type), sizeof(int), 0) < 0){
+//     printf("err in %s: send type failed\n", __func__);
+//     return -1;
+//   }
 
-  if(send(tracker_conn, ip, IP_LEN * sizeof(char), 0) < 0){
-    printf("err in %s: send peerip failed\n", __func__);
-    free(ip);
-    return -1;
-  }
-  free(ip);
+//   if(send(tracker_conn, ip, IP_LEN * sizeof(char), 0) < 0){
+//     printf("err in %s: send peerip failed\n", __func__);
+//     free(ip);
+//     return -1;
+//   }
+//   free(ip);
 
 
-  if(send(tracker_conn, &(port), sizeof(int), 0) < 0){
-    printf("err in %s: send entry number failed\n", __func__);
-    return -1;
-  }
+//   if(send(tracker_conn, &(port), sizeof(int), 0) < 0){
+//     printf("err in %s: send entry number failed\n", __func__);
+//     return -1;
+//   }
 
-  if(send(tracker_conn, &(filetablesize), sizeof(int), 0) < 0){
-    printf("err in %s: send filetablesize failed\n", __func__);
-    return -1;
-  }
+//   if(send(tracker_conn, &(filetablesize), sizeof(int), 0) < 0){
+//     printf("err in %s: send filetablesize failed\n", __func__);
+//     return -1;
+//   }
 
-  return 1;
-}
+//   return 1;
+// }
 
 /********* CONFIGURE ***********************************/
 

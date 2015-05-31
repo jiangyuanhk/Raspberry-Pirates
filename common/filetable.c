@@ -482,8 +482,10 @@ fileTable_t* filetable_convertEntriesToFileTable(fileEntry_t* head_file) {
     entry = entry -> next;
   }
 
-  //make sure the tail has a next of NULL
-  filetable -> tail -> next = NULL;
+  //make sure the tail has a next of NULL if it exists
+  if (filetable -> tail){
+  	filetable -> tail -> next = NULL;
+  }
 
 	return filetable;
 }
