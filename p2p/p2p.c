@@ -38,6 +38,7 @@ downloadEntry_t* init_downloadEntry(fileEntry_t* file, int piece_len) {
   downloadEntry_t* download_entry = malloc(sizeof(downloadEntry_t));
   memset(download_entry -> file_name, 0, FILE_NAME_MAX_LEN);
   memcpy(download_entry -> file_name, file -> file_name, strlen(file -> file_name) + 1);
+  download_entry -> timestamp = file -> timestamp;
 
   int num_pieces = (file -> size % piece_len == 0) ? file -> size / piece_len : (file -> size / piece_len) + 1;
   download_entry -> num_pieces = num_pieces;

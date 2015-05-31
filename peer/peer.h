@@ -20,6 +20,8 @@ void* p2p_download(void* arg);
 
 void* p2p_upload(void* arg);
 
+void* p2p_download_file(void* arg);
+
 void* file_monitor_thread(void* arg);
 
 void* keep_alive(void* arg);

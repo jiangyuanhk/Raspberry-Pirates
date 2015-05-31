@@ -17,6 +17,7 @@ typedef struct downloadPiece {
 
 typedef struct downloadEntry {
   char file_name[FILE_NAME_MAX_LEN];  // filepath of the local file being downloaded
+  int timestamp;                      // the timestamp the download entry should based on tracker
   int num_pieces;                     // the number of pieces the file is broken into
   downloadPiece_t* head;              // the head of the piece linked list
   downloadPiece_t* tail;              // the tail of the piece linked list

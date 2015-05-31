@@ -56,6 +56,7 @@ void* p2p_download(void* arg) {
 
   //keep polling the entry list trying to get an entry to receive.
   while(entry -> successful_pieces != entry -> num_pieces) {
+    printf("Looping\n");
     downloadPiece_t* piece;
     if ( (piece = get_downloadPiece(entry)) != NULL) {
         
@@ -121,7 +122,7 @@ int recombine_temp_files(char* filepath, int num_pieces) {
       return -1;
     }
 
-    printf("Copying Piece Number: %d", num);
+    printf("Copying Piece Number: %d\n", num);
 
     char buffer[1500];
     size_t bytes;
@@ -131,6 +132,7 @@ int recombine_temp_files(char* filepath, int num_pieces) {
       fwrite(buffer, 1, bytes, main_file);
     }
 
+    printf("Exitied the read through file loop\n");
     //once done reading the temp file, close it and remove it
     fclose(temp_file);
     remove(temp_filepath);
@@ -190,18 +192,13 @@ int main() {
   }
 
 
-  //// Set timestamp of file
+  // Set the last modify time to be that from the tracker filetable info
   struct utimbuf* newTime = (struct utimbuf*) malloc(sizeof(struct utimbuf));
-  
-  newTime -> actime = timeStamp; //set the access time to 
-  newTime -> modtime = timeStamp;
+  newTime -> modtime = file -> timestamp;
   utime(entry -> file_name, newTime);
+  printf("Updated file time. \n");
 
-
-
-  //update the timestamp to be the timestamp 
   //sleep monitor poll interval
   // remove from the blocklist because the file has been updated 
-  pthread_exit(NULL);
 }
 
