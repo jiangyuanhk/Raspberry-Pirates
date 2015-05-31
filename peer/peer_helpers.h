@@ -84,7 +84,7 @@ arg_struct_t* create_arg_struct(downloadEntry_t* download_entry, char* ip);
 void downloadtable_destroy(downloadTable_t* downloadtable);
 
 //add an entry that has already been init'ed with init downloadEntry to the download table
-int add_entry_to_downloadtable(downloadTable_t* downloadtable, downloadEntry_t* entry);
+void add_entry_to_downloadtable(downloadTable_t* downloadtable, downloadEntry_t* entry);
 
 //remove and entry from the download table
 int remove_entry_from_downloadtable(downloadTable_t* downloadtable, char* filename);

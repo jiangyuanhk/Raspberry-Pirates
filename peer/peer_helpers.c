@@ -123,8 +123,8 @@ int receive_data_p2p(int peer_tracker_conn, file_metadata_t* metadata){
 
   char int_buf[10];
   memset(int_buf, 0, 10);
-  sprintf(file_path, "/tmp/%s.%d", strrchr(metadata -> filename, '/'), metadata -> piece_num);
-  printf("File Path outputing file to%s\n", file_path);
+  sprintf(file_path, "/tmp/%s.%d", strrchr(metadata -> filename, '/') + 1, metadata -> piece_num);
+  printf("File Path outputing file to %s\n", file_path);
 
   
   FILE* file_pointer = fopen(file_path, "w");
@@ -378,6 +378,69 @@ arg_struct_t* create_arg_struct(downloadEntry_t* download_entry, char* ip) {
   return args;
 }
 
+//free everything in the table, table, linked list of entries and the linked list of pieces for each entry
+void downloadtable_destroy(downloadTable_t* downloadtable){
+  if(downloadtable->size > 0){
+    downloadEntry_t* iter = downloadtable->head;
+    while(iter){
+      downloadEntry_t* tobeDeleted = iter;
+      iter = iter->next;
+      free(tobeDeleted);
+    }
+  }
+
+  free(downloadtable->mutex);
+  free(downloadtable);
+}
+
+//add an entry that has already been init'ed with init downloadEntry to the download table
+void add_entry_to_downloadtable(downloadTable_t* downloadtable, downloadEntry_t* entry) {
+  if(downloadtable->size == 0){
+    downloadtable->head = entry;
+    downloadtable->tail = entry;
+  } 
+
+  else {
+    downloadtable->tail->next = entry;
+    downloadtable->tail = downloadtable->tail->next;
+  }
+
+  downloadtable->size++;
+} 
+
+
+downloadEntry_t* search_downloadtable_for_entry(downloadTable_t* downloadtable, char* filename){
+  if(downloadtable->size > 0){
+    downloadEntry_t* iter = downloadtable->head;
+    
+    while(iter){
+      
+      if(strcmp(iter->file_name, filename) == 0){
+        return iter;
+      }
+    }
+  }
+
+  return NULL;
+}
+
+int remove_entry_from_downloadtable(downloadTable_t* downloadtable, char* filename){
+
+  downloadEntry_t* dummy = (downloadEntry_t*)malloc(sizeof(downloadEntry_t));
+  dummy->next = downloadtable->head;
+
+  downloadEntry_t* iter = dummy;
+  while(iter->next){
+    if(strcmp(iter->next->file_name, filename) == 0){
+      downloadEntry_t* tobeDeleted = iter->next;
+      iter->next = iter->next->next;
+      free(tobeDeleted);
+      return 1;
+    }
+  }
+
+  return -1;
+}
 
 
 
