@@ -425,13 +425,67 @@ void* keep_alive(void* arg) {
   pthread_exit(NULL);
 }
 
+//--------------------File Monitor Callbacks-------------------------
+/*
+* Creates a fileEntry_t from a file name
+*
+*@name: name to return
+*/
+fileEntry_t* FileEntry_create(char* name) {
+  FileInfo* myInfo = getFileInfo(name);
+
+  /*fileEntry_t* newEntryPtr = calloc(1, sizeof(fileEntry_t));
+  strcpy(newEntryPtr->file_name, name);
+  newEntryPtr->size = myInfo->size;
+  newEntryPtr->timestamp = myInfo->lastModifyTime;*/
+  char* filepath = calloc(1, (strlen(directory) + strlen(name) + 1) * sizeof(char));
+  sprintf(filepath, "%s%s", directory, name);
+
+  fileEntry_t* newEntryPtr = filetable_createFileEntry(filepath, myInfo->size, myInfo->lastModifyTime, REGULAR_FILE);
+
+  free(myInfo->filepath);
+  free(filepath);
+
+  return newEntryPtr;
+  
+}
+/* 
+* Callback methods for the File Monitor
+*@name: name of the file to modify
+*/
+void Filetable_peerAdd(char* name) {
+  fileEntry_t* newEntryPtr = FileEntry_create(name);
+  filetable_appendFileEntry(filetable, newEntryPtr);
+}
+void Filetable_peerModify(char* name) {
+  fileEntry_t* oldEntryPtr = filetable_searchFileByName(filetable, name);
+  fileEntry_t* newEntryPtr = FileEntry_create(name);
+  int ret = filetable_updateFile(oldEntryPtr, newEntryPtr, pthread_mutex_t* tablemutex);
+
+  if (ret) {
+    printf("File entry for %s modified\n", name);
+  }
+  else {
+    printf("Update failed: File entry for %s not found\n", name)
+  }
+}
+void Filetable_peerDelete(char* name) {
+  int ret = filetable_deleteFileEntryByName(filetable, name);
+  if (ret) {
+    printf("File entry for %s deleted\n", name);
+  }
+  else {
+    printf("File entry for %s not found\n", name)
+  }
+}
+//--------------------File Monitor Callbacks-------------------------
 
 int main(int argc, char *argv[]) {
 
   
   //Initialize the directory to sync
   printf("Read in config file to get directory.\n");
-  directory = read_config_file("config");
+  directory = readConfigFile("config");
 
   if (directory == NULL) {
     printf("Error reading the config file.\n");
@@ -445,8 +499,31 @@ int main(int argc, char *argv[]) {
   printf("Successfully read in config file.\n");
 
   //Create the local file table
-  filetable = create_local_filetable(directory);
-  filetable_printFileTable(filetable);
+  //filetable = create_local_filetable(directory);
+  filetable = filetable_init();
+  //filetable_printFileTable(filetable);
+
+  //--------------------File Monitor Thread-------------------------
+  void (*Add)(char *);
+  void (*Modify)(char *);
+  void (*Delete)(char *);
+
+  Add = &Filetable_peerAdd;
+  Modify = &Filetable_peerModify;
+  Delete = &Filetable_peerDelete;
+
+  localFileAlerts myFuncs = {
+    Add,
+    Modify,
+    Delete
+  };
+
+
+  pthread_t monitorthread;
+  pthread_create(&monitorthread, NULL, fileMonitorThread, (void*) &myFuncs);
+
+  //--------------------File Monitor Thread-------------------------
+
 
   char cwd1[1024];
   if (getcwd(cwd1, sizeof(cwd1)) != NULL)
@@ -456,8 +533,8 @@ int main(int argc, char *argv[]) {
   //Initialize the peer table as empty
   peertable = malloc(sizeof(peerTable_t)); 
 
-  update_blocklist = blocklist_init();
-  delete_blocklist = blocklist_init();
+  /*update_blocklist = blocklist_init();
+  delete_blocklist = blocklist_init();*/
 
   //Attempt to establish connection with tracker
   if ( (tracker_connection = connect_to_tracker()) < 0) {
@@ -492,11 +569,15 @@ int main(int argc, char *argv[]) {
   pthread_t tracker_listening_thread;
   pthread_create(&tracker_listening_thread, NULL, tracker_listening, (void*)0);
 
-  pthread_t file_monitor_thread;
-  pthread_create(&file_monitor_thread, NULL, file_monitor, (void*)0);
+  //pthread_t file_monitor_thread;
+  //pthread_create(&file_monitor_thread, NULL, file_monitor, (void*)0);
   
   // start the thread to listen on the p2p port for connections from other peers
   // pthread_t p2p_listening_thread;
   // pthread_create(&p2p_listening_thread, NULL, p2p_listening, &tracker_connection);
   while(1) sleep(60);
+
+  /*place in sigint
+  FileMonitor_close();
+  */
 }

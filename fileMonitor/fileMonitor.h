@@ -78,7 +78,7 @@ void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs);
 *@filename: name of the config file
 *
 */
-void readConfigFile(char* filename);
+char* readConfigFile(char* filename);
 /*
 *frees global variables
 */
