@@ -285,6 +285,71 @@ void trackerStop() {
 }
 
 
+//Function to receive a file table from a peer for the first time to avoid deleting files in the tracker that should 
+// be synced back to the local peer.
+int initial_sync_with_peer(int conn) {
+  ptp_peer_t pkt_recv;
+  memset(&pkt_recv, 0, sizeof(ptp_peer_t));
+
+  //if fail to receive the packet, return -1.
+  if (pkt_tracker_recvPkt(conn, &pkt_recv) < 0) return -1;
+    
+  printf("Type: %d\n", pkt_recv.type);
+  printf("File Table Size: %d\n", pkt_recv.filetablesize);
+
+  //if receive the wrong kind of table, reset
+  if (pkt_recv.type != 1) return -1;
+  printf("Received a file update packet!\n");
+
+  fileTable_t* peer_filetable = filetable_convertEntriesToFileTable(pkt_recv.filetableHeadPtr);
+  filetable_printFileTable(peer_filetable);
+
+  //Check if we need to add or update entries in the tracker file table
+
+  //for each file entry in packet's fileTable:
+  fileEntry_t* iter = peer_filetable -> head;
+
+  while(iter != NULL) {
+    
+    fileEntry_t* entry = filetable_searchFileByName(myFileTablePtr, iter->file_name);
+
+    // if the entry is null, it is a new file and needs to be added to the filetable and the ip the list of hosts with the file
+    if(entry == NULL) {
+      fileEntry_t* entry_to_add = malloc(sizeof(fileEntry_t));
+      memcpy(entry_to_add, iter, sizeof(fileEntry_t));
+      entry_to_add -> next = NULL;
+      filetable_appendFileEntry(myFileTablePtr, entry_to_add);
+      filetable_AddIp2Iplist(entry_to_add, pkt_recv.peer_ip, myFileTablePtr->filetable_mutex);
+    } 
+
+    // if the filetable entry has an outdated timestamp, the file has been updated
+    // so need broadcast and update the file
+    else if( (iter->timestamp) < (entry -> timestamp) ) {
+      filetable_updateFile(entry, iter, myFileTablePtr->filetable_mutex);
+    }
+
+    // if the timestamps are the same, the file is updated at the peer so add to ip list for file
+    // if the ip is already in the list for the file, do not broadcast again
+    else if( (iter -> timestamp) == (entry -> timestamp) ) {
+      filetable_AddIp2Iplist(entry, pkt_recv.peer_ip, myFileTablePtr->filetable_mutex);
+    }
+
+    iter = iter -> next;
+  }
+
+  printf("Successfully updated the tracker filetable. Broadcast new table.\n");
+  
+  //at this time we finish sync fileTables between trakcer and server
+  //begin to broadcast tracker's new fileTable
+  broadcastFileTable();
+
+  if (peer_filetable) {
+    filetable_destroy(peer_filetable);
+  }
+
+  return 1;
+}
+
 
 /**
  * 1. initialize a peertable and a filetable
@@ -347,11 +412,6 @@ void trackerStop() {
       printf("Error receiving the register packet\n");
     }
 
-    // printf("Type: %d\n", pkt_recv.type);
-    // printf("File Table Size: %d\n", pkt_recv.filetablesize);
-
-    // fileTable_t* peer_filetable = filetable_convertEntriesToFileTable(pkt_recv.filetableHeadPtr);
-    // filetable_printFileTable(peer_filetable);
     printf("Successfully received the register packet.\n");
 
 
@@ -366,14 +426,6 @@ void trackerStop() {
       peertable_addEntry(myPeerTablePtr, peerEntry);
       peertable_printPeerTable(myPeerTablePtr);
       printf("Peer table updated successfully.\n");
-
-      // char buffer[1000];
-      // int num;
-      // if( (num = recv(connfd, buffer, sizeof(int), 0)) < 0) {
-      //   printf("err in %s: failed to receive type\n", __func__ );
-      //   return -1;
-      // }
-      // printf("Num left over in buffer: %d\n", num);
 
       //create a handshake thread to handle messages from this particular peer
       //receive messages from this peer and respond if needed
@@ -393,9 +445,14 @@ void trackerStop() {
 			
       printf("Successfully sent the packet.\n");
 
+      //if fail the initial sync with the peer, exit the loop and terminate the 
+      if (initial_sync_with_peer(connfd) < 0) {
+        printf("Error Syncing With Peer. Killing connection.\n");
+        free(setup);
+        close(connfd);
+        continue;
+      }
 		}
-
-
 	}
 }
 

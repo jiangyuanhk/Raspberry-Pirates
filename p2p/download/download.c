@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <utime.h>
 
 #include "../../common/constants.h"
 #include "../../common/filetable.h"
@@ -188,6 +189,19 @@ int main() {
     printf("File Succesfully Updated: %s\n", entry -> file_name);
   }
 
+
+  //// Set timestamp of file
+  struct utimbuf* newTime = (struct utimbuf*) malloc(sizeof(struct utimbuf));
+  
+  newTime -> actime = timeStamp; //set the access time to 
+  newTime -> modtime = timeStamp;
+  utime(entry -> file_name, newTime);
+
+
+
+  //update the timestamp to be the timestamp 
+  //sleep monitor poll interval
+  // remove from the blocklist because the file has been updated 
   pthread_exit(NULL);
 }
 

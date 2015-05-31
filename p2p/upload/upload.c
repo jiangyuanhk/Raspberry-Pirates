@@ -50,7 +50,7 @@ void* p2p_upload(void* arg) {
 }
 
 
-
+//really just p2p listening thread.
 int main() {
 
   //Set up the socket for listening

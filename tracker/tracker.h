@@ -18,7 +18,7 @@ void updateFileTable(ptp_peer_t * pkt);
 void broadcastFileTable();
 
 
-
+int initial_sync_with_peer(int conn);
 
 void *handshake(void* arg);
 

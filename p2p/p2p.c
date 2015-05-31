@@ -19,7 +19,6 @@
 
 #include "p2p.h"
 
-
 downloadTable_t* init_downloadTable() {
 
   downloadTable_t* downloadtable = malloc(sizeof(downloadTable_t));
