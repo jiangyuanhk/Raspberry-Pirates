@@ -37,16 +37,13 @@ int tracker_connection;     // socket connection between peer and tracker so can
 int heartbeat_interval;
 int piece_len;
 int register_recv = 0;
+
 //terminates the threads when this flips to 0
 int noSIGINT = 1;
 
-// char ignore_list[MAX_NUM_PEERS*MAX_NUM_PEERS][FILE_NAME_MAX_LEN];
-
 char* directory;
-fileTable_t* filetable;         //local file table to keep track of files in the directory
+fileTable_t* filetable;               //local file table to keep track of files in the directory
 downloadTable_t* downloadtable;      //peer table to keep track of ongoing downloading tasks
-// blockList_t* update_blocklist;  //add and update block list
-// blockList_t* delete_blocklist;  //delete block list
 
 //Function to connect the peer to the tracker on the HANDSHAKE Port.
 // Returns -1 if it failed to connect.  Otherwise, returns the sockfd
@@ -168,6 +165,11 @@ void* tracker_listening(void* arg) {
         blockFileWriteListening(file -> file_name);
         
         //TODO make sure that the file is not already being downloaded and if not, add to the peer table
+        //if (search_downloadtable_for_entry(downloadtable, file -> file_name)) {
+            //PTHREAD STUFF
+        //}
+        //otherwise we do not want to download again as it is already downloading
+        //prinf that
         pthread_t p2p_download_file_thread;
         pthread_create(&p2p_download_file_thread, NULL, p2p_download_file, file);
       }
@@ -204,9 +206,7 @@ void* tracker_listening(void* arg) {
 
         else {
           printf("Error in removing the file from the file system.\n");
-        }
-        //add to a a list of deleted files
-          
+        }          
       }
 
       file = file -> next;
