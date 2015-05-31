@@ -13,7 +13,7 @@ typedef struct fileBlockEntry {
 } file_t;
 
 
-typedef struct fileBlockList {
+typedef struct {
 	int size;
 	struct fileBlockEntry* head;
 	struct fileBlockEntry* tail;

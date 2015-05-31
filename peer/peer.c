@@ -22,7 +22,7 @@
 #include <sys/stat.h>
 
 #include "peer.h"
-// #include "file_monitor.h"
+#include "file_monitor.h"
 #include "../common/constants.h"
 #include "../common/pkt.h"
 #include "../common/filetable.h"
@@ -290,7 +290,7 @@ void* p2p_upload(void* arg) {
 
 /* Thread to monitor local file changes.  When a file is changed locally, inform the tracker by sending the filetable
   to the tracker.
-*/
+*//*
 void* file_monitor(void* arg) {
   //initially send filetable to the tracker.
   printf("Starting the File Monitor Thread.\n");
@@ -421,7 +421,7 @@ void* file_monitor(void* arg) {
 
   pthread_exit(NULL);
 }
-
+*/
 
 void* keep_alive(void* arg) {
   int interval = *(int*) arg;
@@ -441,7 +441,7 @@ void* keep_alive(void* arg) {
 *@name: name to return
 */
 fileEntry_t* FileEntry_create(char* name) {
-  FileInfo* myInfo = getFileInfo(name);
+  FileInfo myInfo = getFileInfo(name);
 
   /*fileEntry_t* newEntryPtr = calloc(1, sizeof(fileEntry_t));
   strcpy(newEntryPtr->file_name, name);
@@ -450,9 +450,9 @@ fileEntry_t* FileEntry_create(char* name) {
   char* filepath = calloc(1, (strlen(directory) + strlen(name) + 1) * sizeof(char));
   sprintf(filepath, "%s%s", directory, name);
 
-  fileEntry_t* newEntryPtr = filetable_createFileEntry(filepath, myInfo->size, myInfo->lastModifyTime, REGULAR_FILE);
+  fileEntry_t* newEntryPtr = filetable_createFileEntry(filepath, myInfo.size, myInfo.lastModifyTime, REGULAR_FILE);
 
-  free(myInfo->filepath);
+  free(myInfo.filepath);
   free(filepath);
 
   return newEntryPtr;
@@ -465,17 +465,18 @@ fileEntry_t* FileEntry_create(char* name) {
 void Filetable_peerAdd(char* name) {
   fileEntry_t* newEntryPtr = FileEntry_create(name);
   filetable_appendFileEntry(filetable, newEntryPtr);
+  printf("File entry for %s added to filetable\n", name);
 }
 void Filetable_peerModify(char* name) {
   fileEntry_t* oldEntryPtr = filetable_searchFileByName(filetable, name);
   fileEntry_t* newEntryPtr = FileEntry_create(name);
-  int ret = filetable_updateFile(oldEntryPtr, newEntryPtr, pthread_mutex_t* tablemutex);
+  int ret = filetable_updateFile(oldEntryPtr, newEntryPtr, filetable->filetable_mutex);
 
   if (ret) {
     printf("File entry for %s modified\n", name);
   }
   else {
-    printf("Update failed: File entry for %s not found\n", name)
+    printf("Update failed: File entry for %s not found\n", name);
   }
 }
 void Filetable_peerDelete(char* name) {
@@ -484,7 +485,7 @@ void Filetable_peerDelete(char* name) {
     printf("File entry for %s deleted\n", name);
   }
   else {
-    printf("File entry for %s not found\n", name)
+    printf("File entry for %s not found\n", name);
   }
 }
 //--------------------File Monitor Callbacks-------------------------
