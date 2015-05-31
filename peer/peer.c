@@ -232,6 +232,7 @@ void* tracker_listening(void* arg) {
 // Thread to listen on the P2P port for download requests from other peers to spawn upload threads.
 // First initializes a port to listen for requests to connect to it and then listens.
 void* p2p_listening(void* arg) {
+  printf("Start p2p listening thread. \n");
   //Set up the socket for listening
   int peer_sockfd;
   struct sockaddr_in local_peer_addr;
@@ -267,6 +268,7 @@ void* p2p_listening(void* arg) {
   while(noSIGINT) {
     int peer_conn;
 
+    printf("Listening for for a connection.\n");
     peer_conn = accept(peer_sockfd, (struct sockaddr*) &other_peer_addr, &other_peer_addr_len);
     printf("Established a connection to a peer. Starting a P2PDownload Thread.\n");
 
@@ -294,6 +296,7 @@ void* p2p_download(void* arg) {
   memcpy(ip, args -> ip, strlen(args->ip) );
   free(args);
   
+  printf("Trying to connect to the download thread for ip: %s\n", ip);
   // Create a socket and connect to the given IP address.
   struct sockaddr_in servaddr;
   servaddr.sin_family = AF_INET;
