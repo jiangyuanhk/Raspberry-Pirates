@@ -496,8 +496,8 @@ int FileBlockList_Remove(char* filepath, int event) {
 */
 void blockFileAddListening(char* filename) {
 	
-	char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
-	sprintf(filepath, "%s%s", directory, filename);
+	//char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
+	//sprintf(filepath, "%s%s", directory, filename);
 
 	FileBlockList* blockAdd = calloc(1, sizeof(FileBlockList));
 	blockAdd->filepath = filepath;
@@ -516,8 +516,8 @@ void blockFileAddListening(char* filename) {
 */
 void blockFileWriteListening(char* filename) {
 	
-	char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
-	sprintf(filepath, "%s%s", directory, filename);
+	//char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
+	//sprintf(filepath, "%s%s", directory, filename);
 
 	FileBlockList* blockWrite = calloc(1, sizeof(FileBlockList));
 	blockWrite->filepath = filepath;
@@ -534,8 +534,8 @@ void blockFileWriteListening(char* filename) {
 */
 void blockFileDeleteListening(char* filename) {
 	
-	char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
-	sprintf(filepath, "%s%s", directory, filename);
+	//char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
+	//sprintf(filepath, "%s%s", directory, filename);
 
 	FileBlockList* blockDelete = calloc(1, sizeof(FileBlockList));
 	blockDelete->filepath = filepath;
@@ -552,8 +552,8 @@ void blockFileDeleteListening(char* filename) {
 */
 int unblockFileAddListening(char* filename) {
 	
-	char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
-	sprintf(filepath, "%s%s", directory, filename);
+	//char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
+	//sprintf(filepath, "%s%s", directory, filename);
 
 	int event = EVENT_ADDED;
 
@@ -572,8 +572,8 @@ int unblockFileAddListening(char* filename) {
 */
 int unblockFileWriteListening(char* filename) {
 	
-	char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
-	sprintf(filepath, "%s%s", directory, filename);
+	//char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
+	//sprintf(filepath, "%s%s", directory, filename);
 
 	int event = EVENT_MODIFIED;
 
@@ -587,8 +587,8 @@ int unblockFileWriteListening(char* filename) {
 */
 int unblockFileDeleteListening(char* filename) {
 	
-	char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
-	sprintf(filepath, "%s%s", directory, filename);
+	//char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
+	//sprintf(filepath, "%s%s", directory, filename);
 
 	int event = EVENT_DELETED;
 
