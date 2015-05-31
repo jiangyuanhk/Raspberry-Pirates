@@ -93,6 +93,9 @@ void delete_folder_tree (const char* directory_name) {
     dir = opendir(directory_name);
 
     while ((ent = readdir(dir)) != NULL) {
+        if(strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..")) {
+          continue;
+        }
         sprintf(buf, "%s/%s", directory_name, ent->d_name);
         printf("Deleting entity from the filetable: %s \n", ent -> d_name);
         filetable_deleteFileEntryByName(filetable, ent->d_name);
@@ -241,7 +244,7 @@ void* p2p_listening(void* arg) {
   
   //Start infinite loop waiting to accept connections from peers.
   //When a peer connects, we create a upload thread to handle that connection.  
-  while(1) {
+  while(noSIGINT) {
     int peer_conn;
 
     peer_conn = accept(peer_sockfd, (struct sockaddr*) &other_peer_addr, &other_peer_addr_len);
