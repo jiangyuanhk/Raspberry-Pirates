@@ -66,7 +66,7 @@ void *fileMonitorThread(void* arg) {
 		//get a comparison and call the necessary functions
 		FilesInfo_UpdateAlerts(newtable, funcs);
 		//set ftable to the updated version
-		free(ftable);
+		FileInfo_table_destroy(ftable);
 		ftable = newtable;
 		//wait a set interval time before checking the directory again
 		sleep(MONITOR_POLL_INTERVAL);
@@ -75,6 +75,19 @@ void *fileMonitorThread(void* arg) {
 	FileMonitor_freeAll();
 
 	return NULL;
+}
+/*
+* Frees space allocated for a File info table
+*
+*@table: the table to free
+*/
+void FileInfo_table_destroy(FileInfo_table* table) {
+	int i;
+	for (i = 0; i < table->num_files; i++) {
+		free(table->table[i].filepath);
+	}
+	free(table->table);
+	free(table);
 }
 /*
 *Signals the file monitor to close
@@ -279,6 +292,7 @@ FileInfo_table* getAllFilesInfo() {
 				}
 			}
 			if(idx == num_files) {
+				free(filepath);
 				break;
 			}
 			free(filepath);
@@ -344,19 +358,19 @@ void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs) {
 		sprintf(filepath, "%s%s", directory, filename);
 
 		idx = FilesInfo_table_search(filename, ftable);
-		if(idx == -1 && !FileBlockList_Search(filepath, EVENT_ADDED)) {
-			printf("File added: %s\n",filename);
-			change = 1;
-			funcs->fileAdded(filepath);
+		if(idx == -1) {
+			if(!FileBlockList_Search(filepath, EVENT_ADDED)) {
+				printf("File added: %s\n",filename);
+				change = 1;
+				funcs->fileAdded(filepath);
+			}
 		}
 		else if (ftable->table[idx].lastModifyTime != newtable->table[i].lastModifyTime  && !FileBlockList_Search(filepath, EVENT_MODIFIED)) {
 			printf("File updated: %s\n",filename);
 			change = 1;
 			funcs->fileModified(filepath);
 		}
-		else {
-			free(filepath);
-		}
+		free(filepath);
 	}
 	if(change) {
 		funcs->filesChanged();
@@ -382,7 +396,7 @@ char* readConfigFile(char* filename) {
 		printf("No line read from config file\n");
 		return NULL;
 	}
-	directory = calloc(1, strlen(buf) * sizeof(char));
+	directory = calloc(1, strlen(buf) * sizeof(char) + 1);
 	strcpy(directory, buf);
 	fclose(config);
 
@@ -393,18 +407,13 @@ char* readConfigFile(char* filename) {
 */
 void FileMonitor_freeAll() {
 	//Free the file info table
-	int i;
-	for(i = 0; i < ftable->num_files; i++) {
-		free(ftable->table[i].filepath);
-	}
-	free(ftable->table);
-	free(ftable);
+	FileInfo_table_destroy(ftable);
 	//free the directory string
 	free(directory);
 	//Free the block list
 	FileBlockList* toFree = blockList;
-	FileBlockList* next = blockList->next;
 	if (toFree) {
+		FileBlockList* next = toFree->next;
 		while(next) {
 			free(toFree->filepath);
 			free(toFree);
@@ -481,19 +490,23 @@ int FileBlockList_Remove(char* filepath, int event) {
 		return ret;
 	}
 	while(curr) {
+		//will do the wrong thing if file name is part of a larger file name
 		if(strncmp(filepath, curr->filepath, strlen(filepath)) == 0) {
 			if(curr->event == event) {
+				ret = 1;
 				if(prev) {
 					prev->next = curr->next;
 					free(curr->filepath);
 					free(curr);
+					curr = prev->next;
 				}
 				else {
 					blockList = curr->next;
 					free(curr->filepath);
 					free(curr);
+					curr = blockList;
 				}
-				ret = 1;
+				continue;
 			}
 		}
 		prev = curr;
@@ -557,22 +570,26 @@ void blockFileDeleteListening(char* filename) {
 	blockDelete->event = EVENT_DELETED;
 
 	struct stat entinfo;
-	char* thispath = calloc(1, strlen(directory) + strlen(filename) + 1);
-	sprintf(thispath, "%s%s", directory, filename);
-	stat(thispath, &entinfo);
-	if(S_ISDIR(entinfo.st_mode)) {
-		DIR *dir;
-		struct dirent *ent;
-		if ((dir = opendir(directory)) != NULL) {
-			while ((ent = readdir(dir)) != NULL) {
-				char* filepath = calloc(1, strlen(filename) + 1 + strlen(ent->d_name));
-				sprintf("%s/%s", filename, ent->d_name);
-				blockFileDeleteListening(filepath);
-				free(filepath);
+	//char* thispath = calloc(1, strlen(directory) + strlen(filename) + 1);
+	//sprintf(thispath, "%s%s", directory, filename);
+	if(stat(filename, &entinfo)== 0) {
+		if(S_ISDIR(entinfo.st_mode)) {
+			DIR *dir;
+			struct dirent *ent;
+			if ((dir = opendir(directory)) != NULL) {
+				while ((ent = readdir(dir)) != NULL) {
+					char* filepath = calloc(1, strlen(filename) + 1 + strlen(ent->d_name));
+					sprintf("%s/%s", filename, ent->d_name);
+					blockFileDeleteListening(filepath);
+					free(filepath);
+				}
 			}
 		}
 	}
-	free(thispath);
+	else {
+		printf("Stat failed on path %s\n", filename);
+	}
+	//free(thispath);
 
 
 	FileBlockList_Append(blockDelete);

@@ -42,6 +42,12 @@ typedef struct {
 */
 void *fileMonitorThread(void* arg);
 /*
+* Frees space allocated for a File info table
+*
+*@table: the table to free
+*/
+void FileInfo_table_destroy(FileInfo_table* table);
+/*
 *Signals the file monitor to close
 */
 void FileMonitor_close();

@@ -62,24 +62,24 @@ pthread_create(&monitorthread, NULL, fileMonitorThread, (void*) &myFuncs);
 
 sleep(15);
 
-blockFileAddListening("Blocked");
+blockFileAddListening("./testing/Blocked");
 printf("File Blocked will be ignored if added for 15 seconds\n");
 
 sleep(15);
 
-unblockFileAddListening("Blocked");
-blockFileWriteListening("Blocked");
+unblockFileAddListening("./testing/Blocked");
+blockFileWriteListening("./testing/Blocked");
 printf("File Blocked will be ignored if modified for 15 seconds\n");
 
 sleep(15);
 
-unblockFileWriteListening("Blocked");
-blockFileDeleteListening("Blocked");
+unblockFileWriteListening("./testing/Blocked");
+blockFileDeleteListening("./testing/Blocked");
 printf("File Blocked will be ignored if deleted for 15 seconds\n");
 
 sleep(15);
 
-unblockFileDeleteListening("Blocked");
+unblockFileDeleteListening("./testing/Blocked");
 
 FileMonitor_close();
 
