@@ -49,7 +49,7 @@ void *fileMonitorThread(void* arg) {
 	ftable = getAllFilesInfo();
 
 	int i;
-	for(i = 0; i < ftable->num_files - 1; i++) {
+	for(i = 0; i < ftable->num_files; i++) {
 		//funcs->fileSync(ftable->table[i].filepath);
 		funcs->fileAdded(ftable->table[i].filepath);
 	}
