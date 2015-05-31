@@ -5,12 +5,12 @@
 //Date: May 22, 2015
 
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <string.h>
 #include <arpa/inet.h>
 #include <signal.h>
 #include <netdb.h>
@@ -84,14 +84,16 @@ int get_file_size(char* filepath) {
 }
 
 // Function to send meta data to another peer before sending the actual file
-file_metadata_t* send_meta_data_info(int peer_conn, char* filepath, int start, int size){
+file_metadata_t* send_meta_data_info(int peer_conn, char* filepath, int start, int size, int piece_num){
   file_metadata_t* metadata = calloc(1, sizeof(file_metadata_t));
   
   memcpy(metadata -> filename, filepath, strlen(filepath) + 1);
   metadata -> size = size;
   metadata -> start = start;
+  metadata -> piece_num = piece_num;
 
   if (send(peer_conn, metadata, sizeof(file_metadata_t), 0) < 0) {
+    printf("Failed to send meta data info.\n");
     free(metadata);
     return NULL;
   }
@@ -116,7 +118,15 @@ if (recv(peer_conn, metadata, sizeof(file_metadata_t), 0) < 0) {
   */
 int receive_data_p2p(int peer_tracker_conn, file_metadata_t* metadata){
 
-  FILE* file_pointer = fopen(metadata -> filename , "w");
+  char file_path[200];
+
+  char int_buf[10];
+  memset(int_buf, 0, 10);
+  sprintf(file_path, "%s.temp%d", metadata -> filename, metadata -> piece_num);
+  printf("File Path outputing file to%s\n", file_path);
+
+  
+  FILE* file_pointer = fopen(file_path, "w");
   
   if (file_pointer == NULL) {
     printf("Error opening file!\n");
@@ -131,11 +141,11 @@ int receive_data_p2p(int peer_tracker_conn, file_metadata_t* metadata){
   int left_to_recv = metadata -> size;
   int recv_buffer_size = (BUFFER_SIZE < left_to_recv) ?  BUFFER_SIZE : left_to_recv;
 
-  while ( (recv_amount = recv(peer_tracker_conn, buffer, recv_buffer_size, 0)) > 0 ) {
-    printf("Amount Room: %d\n", recv_amount);
+  while ( left_to_recv != 0 && (recv_amount = recv(peer_tracker_conn, buffer, recv_buffer_size, 0)) > 0 ) {
+    printf("Amount Read: %d\n", recv_amount);
     fwrite(buffer, sizeof(char), recv_amount, file_pointer);
     memset(buffer, 0, recv_amount);
-
+    printf("Wrote fine\n");
     left_to_recv = left_to_recv - recv_amount;
     recv_buffer_size = (BUFFER_SIZE < left_to_recv) ?  BUFFER_SIZE : left_to_recv;
   }

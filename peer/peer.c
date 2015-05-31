@@ -232,7 +232,7 @@ void* p2p_download(void* arg) {
 
   //Download data from the peer
   //Send the name of the file you need to download
-  file_metadata_t* meta_info  = send_meta_data_info(peer_conn, file -> file_name, 0, 0);
+  file_metadata_t* meta_info  = send_meta_data_info(peer_conn, file -> file_name, 0, 0, 0);
   free(meta_info);
 
   //Recv the file
@@ -269,7 +269,7 @@ void* p2p_upload(void* arg) {
 
   //Sending a file p2p 
   printf("Sending a File: %s \n", recv_metadata -> filename);
-  file_metadata_t* metadata = send_meta_data_info(peer_conn, recv_metadata -> filename, 0, get_file_size(recv_metadata -> filename));
+  file_metadata_t* metadata = send_meta_data_info(peer_conn, recv_metadata -> filename, 0, get_file_size(recv_metadata -> filename), 0);
   send_data_p2p(tracker_connection, metadata);
   free(metadata);
   free(recv_metadata);
@@ -407,7 +407,6 @@ void* file_monitor(void* arg) {
       printf("Successfully send the filetable packet.\n");
     }
 
-
   }
 
 
@@ -467,15 +466,6 @@ int main(int argc, char *argv[]) {
   }
 
   printf("Connected\n");
-
-  // pthread_mutex_lock(filetable -> filetable_mutex);
-  // ptp_peer_t* pkt = pkt_create_peerPkt();
-  // char ip_address[IP_LEN];
-  // get_my_ip(ip_address);
-  // pkt_config_peerPkt(pkt, FILE_UPDATE, ip_address, HANDSHAKE_PORT, filetable -> size, filetable -> head);
-  // pthread_mutex_unlock(filetable -> filetable_mutex);
-  // pkt_peer_sendPkt(tracker_connection, pkt, filetable -> filetable_mutex);
-  // printf("Successfully send the filetable packet.\n");
 
   //  Send a register packet to the tracker
   if (send_register_packet(tracker_connection) < 0) {

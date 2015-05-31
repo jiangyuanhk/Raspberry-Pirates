@@ -9,6 +9,7 @@ typedef struct file_metadata{
 char filename[100];
 int size;                   //how large the file/ part you are sending is
 int start;                  //the location of the first byte of data for the file
+int piece_num;
 } file_metadata_t;
 
 
@@ -18,7 +19,7 @@ int send_register_packet(int tracker_conn);
 
 int get_file_size(char* filepath);
 
-file_metadata_t* send_meta_data_info(int peer_tracker_conn, char* filepath, int start, int size);
+file_metadata_t* send_meta_data_info(int peer_tracker_conn, char* filepath, int start, int size, int piece_num);
 
 int receive_meta_data_info(int peer_tracker_conn, file_metadata_t* metadata);
 
