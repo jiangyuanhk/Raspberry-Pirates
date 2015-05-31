@@ -499,12 +499,15 @@ fileEntry_t* FileEntry_create(char* name) {
     sprintf(filepath, "%s%s", directory, name);
   }
   else {
-    filepath = name;
+    //filepath = name;
+    filepath = calloc(1, strlen(name) + 1);
+    strcpy(filepath, name);
   }
 
   fileEntry_t* newEntryPtr = filetable_createFileEntry(filepath, myInfo.size, myInfo.lastModifyTime, myInfo.type);
 
   free(myInfo.filepath);
+  free(filepath);
 
   return newEntryPtr;
   
@@ -728,7 +731,7 @@ int main(int argc, char *argv[]) {
   pthread_t tracker_listening_thread;
   pthread_create(&tracker_listening_thread, NULL, tracker_listening, (void*)0);
 
-  
+
   // start the thread to listen on the p2p port for connections from other peers
   pthread_t p2p_listening_thread;
   pthread_create(&p2p_listening_thread, NULL, p2p_listening, &tracker_connection);

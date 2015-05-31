@@ -98,6 +98,23 @@ void FileMonitor_close() {
 	running = 0;
 }
 /*
+*End errors having to do with directory being placed on the path twice
+*/
+char* validatePath(char* filename) {
+	char* filepath;
+	if(strncmp(filename, directory, strlen(directory)) != 0) {
+		filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
+		sprintf(filepath, "%s%s", directory, filename);
+	}
+	else {
+		//filepath = filename;
+		filepath = calloc(1, strlen(filename) + 1);
+		strcpy(filepath, filename);
+	}
+
+	return filepath;
+}
+/*
 *Gets the file info for a given filename
 *
 *@filename:the filename to return info for
@@ -106,14 +123,8 @@ void FileMonitor_close() {
 */
 
 FileInfo getFileInfo(char* filename) {
-	char* filepath;
-	if(strncmp(filename, directory, strlen(directory)) != 0) {
-		filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
-		sprintf(filepath, "%s%s", directory, filename);
-	}
-	else {
-		filepath = filename;
-	}
+	char* filepath = validatePath(filename);
+
 	struct stat statinfo;
 	if(stat(filepath, &statinfo) == -1) {
 		free(filepath);
@@ -347,8 +358,7 @@ void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs) {
 	int change = 0;
 	for(i = 0; i < ftable->num_files; i++) {
 		filename = ftable->table[i].filepath;
-		filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
-		sprintf(filepath, "%s%s", directory, filename);
+		filepath = validatePath(filename);
 
 		if(FilesInfo_table_search(filename, newtable) == -1 && !FileBlockList_Search(filepath, EVENT_DELETED)) {
 			printf("File deleted: %s\n",filename);
@@ -363,8 +373,7 @@ void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs) {
 	for(i = 0; i < newtable->num_files; i++) {
 		
 		filename = newtable->table[i].filepath;
-		char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
-		sprintf(filepath, "%s%s", directory, filename);
+		char* filepath = validatePath(filename);
 
 		idx = FilesInfo_table_search(filename, ftable);
 		if(idx == -1) {
@@ -528,22 +537,21 @@ int FileBlockList_Remove(char* filepath, int event) {
 /*
 *Blocks a file from being added
 *
-*@filename: the name of the file excluding the directory name
+*@filename: the path of the file
 */
 void blockFileAddListening(char* filename) {
 	
-	//char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
-	//sprintf(filepath, "%s%s", directory, filename);
-
+	char* filepath = validatePath(filename);
 	FileBlockList* blockAdd = calloc(1, sizeof(FileBlockList));
-	blockAdd->filepath = calloc(1, strlen(filename) * sizeof(char) + 1);
-	strcpy(blockAdd->filepath,filename);
+	blockAdd->filepath = calloc(1, strlen(filepath) * sizeof(char) + 1);
+	strcpy(blockAdd->filepath,filepath);
 	blockAdd->event = EVENT_ADDED;
 
 
 	FileBlockList_Append(blockAdd);
 
-	blockFileWriteListening(filename);
+	blockFileWriteListening(filepath);
+	free(filepath);
 
 }
 /*
@@ -553,47 +561,44 @@ void blockFileAddListening(char* filename) {
 */
 void blockFileWriteListening(char* filename) {
 	
-	//char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
-	//sprintf(filepath, "%s%s", directory, filename);
+	char* filepath = validatePath(filename);
 
 	FileBlockList* blockWrite = calloc(1, sizeof(FileBlockList));
-	blockWrite->filepath = calloc(1, strlen(filename) * sizeof(char) + 1);
-	strcpy(blockWrite->filepath,filename);
+	blockWrite->filepath = calloc(1, strlen(filepath) * sizeof(char) + 1);
+	strcpy(blockWrite->filepath,filepath);
 	blockWrite->event = EVENT_MODIFIED;
 
 
 	FileBlockList_Append(blockWrite);
+	free(filepath);
 
 }
 /*
 *Blocks a file from being deleted
 *
-*@filename: the name of the file excluding the directory name
+*@filename: the path of the file
 */
 void blockFileDeleteListening(char* filename) {
 	
-	//char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
-	//sprintf(filepath, "%s%s", directory, filename);
+	char* filepath = validatePath(filename);
 
 	FileBlockList* blockDelete = calloc(1, sizeof(FileBlockList));
-	blockDelete->filepath = calloc(1, strlen(filename) * sizeof(char) + 1);
-	strcpy(blockDelete->filepath,filename);
+	blockDelete->filepath = calloc(1, strlen(filepath) * sizeof(char) + 1);
+	strcpy(blockDelete->filepath,filepath);
 	blockDelete->event = EVENT_DELETED;
 
 	struct stat entinfo;
-	//char* thispath = calloc(1, strlen(directory) + strlen(filename) + 1);
-	//sprintf(thispath, "%s%s", directory, filename);
-	if(stat(filename, &entinfo)== 0) {
+	if(stat(filepath, &entinfo)== 0) {
 		if(S_ISDIR(entinfo.st_mode)) {
 			DIR *dir;
 			struct dirent *ent;
-			if ((dir = opendir(filename)) != NULL) {
+			if ((dir = opendir(filepath)) != NULL) {
 				while ((ent = readdir(dir)) != NULL) {
 					if(strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..")) {
-						char* filepath = calloc(1, strlen(filename) + 1 + strlen(ent->d_name));
-						sprintf(filepath, "%s/%s", filename, ent->d_name);
-						blockFileDeleteListening(filepath);
-						free(filepath);
+						char* thispath = calloc(1, strlen(filepath) + 1 + strlen(ent->d_name));
+						sprintf(thispath, "%s/%s", filepath, ent->d_name);
+						blockFileDeleteListening(thispath);
+						free(thispath);
 					}
 				}
 			}
@@ -602,7 +607,7 @@ void blockFileDeleteListening(char* filename) {
 	else {
 		printf("Stat failed on path %s\n", filename);
 	}
-	//free(thispath);
+	free(filepath);
 
 
 	FileBlockList_Append(blockDelete);
@@ -611,20 +616,21 @@ void blockFileDeleteListening(char* filename) {
 /*
 *unblocks a file from being added
 *
-*@filename: the name of the file excluding the directory name
+*@filename: the path of the file
 */
 int unblockFileAddListening(char* filename) {
 	
-	//char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
-	//sprintf(filepath, "%s%s", directory, filename);
+	char* filepath = validatePath(filename);
 
 	int event = EVENT_ADDED;
 
-	int ret = unblockFileWriteListening(filename);
+	int ret = unblockFileWriteListening(filepath);
 	if(!ret) {
-		printf("Unexpected unblock failure for file %s", filename);
+		printf("Unexpected unblock failure for file %s", filepath);
 	}
-	ret += FileBlockList_Remove(filename, event);
+	ret += FileBlockList_Remove(filepath, event);
+
+	free(filepath);
 
 	return ret;
 
@@ -632,31 +638,37 @@ int unblockFileAddListening(char* filename) {
 /*
 *unblocks a file from being updated
 *
-*@filename: the name of the file excluding the directory name
+*@filename: the path of the file
 */
 int unblockFileWriteListening(char* filename) {
 	
-	//char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
-	//sprintf(filepath, "%s%s", directory, filename);
+	char* filepath = validatePath(filename);
 
 	int event = EVENT_MODIFIED;
 
-	return FileBlockList_Remove(filename, event);
+	int ret =  FileBlockList_Remove(filepath, event);
+
+	free(filepath);
+
+	return ret;
 
 }
 /*
 *unblocks a file from being deleted
 *
-*@filename: the name of the file excluding the directory name
+*@filename: the path of the file
 */
 int unblockFileDeleteListening(char* filename) {
 	
-	//char* filepath = calloc(1, (strlen(directory) + strlen(filename) + 1) * sizeof(char));
-	//sprintf(filepath, "%s%s", directory, filename);
+	char* filepath = validatePath(filename);
 
 	int event = EVENT_DELETED;
 
-	return FileBlockList_Remove(filename, event);
+	int ret =  FileBlockList_Remove(filepath, event);
+
+	free(filepath);
+
+	return ret;
 
 }
 /*
