@@ -264,8 +264,10 @@ int filetable_updateFile(fileEntry_t* oldEntryPtr, fileEntry_t* newEntryPtr, pth
 
   //otherwise, update the old entry to reflect the values of the new entry
 	pthread_mutex_lock(tablemutex);
+	printf("Old size: %d\n"oldEntryPtr->size);
 	memcpy(&(oldEntryPtr->size), &(newEntryPtr->size), sizeof(int));
 	memcpy(&(oldEntryPtr->timestamp), &(newEntryPtr->timestamp), sizeof(unsigned long int));
+	printf("New size: %d\n"oldEntryPtr->size);
 	pthread_mutex_unlock(tablemutex);
 	return 1;
 }
