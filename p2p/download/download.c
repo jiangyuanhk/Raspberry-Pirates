@@ -54,16 +54,19 @@ void* p2p_download(void* arg) {
 
   //keep polling the entry list trying to get an entry to receive.
   while(entry -> successful_pieces != entry -> num_pieces) {
-    downloadPiece_t* piece = get_downloadPiece(entry);
-    printf("Piece.... Start : %d Size: %d Piece Num: %d \n", piece -> start, piece -> size, piece -> piece_num);
-    file_metadata_t* metadata = send_meta_data_info(peer_conn, entry -> file_name, piece -> start, piece -> size, piece -> piece_num);
+    downloadPiece_t* piece;
+    if ( (piece = get_downloadPiece(entry)) != NULL) {
+        
+      printf("Piece.... Start : %d Size: %d Piece Num: %d \n", piece -> start, piece -> size, piece -> piece_num);
+      file_metadata_t* metadata = send_meta_data_info(peer_conn, entry -> file_name, piece -> start, piece -> size, piece -> piece_num);
 
-    int ret2 = receive_data_p2p(peer_conn, metadata);
-    printf("Ret: %d \n", ret2);
-    free(metadata);
-    printf("Free worked.\n");
-    entry -> successful_pieces ++;
-    printf("Finisiedh loop\n");
+      int ret2 = receive_data_p2p(peer_conn, metadata);
+      printf("Ret: %d \n", ret2);
+      free(metadata);
+      printf("Free worked.\n");
+      entry -> successful_pieces ++;
+      printf("Finisiedh loop\n");
+    }
   }
 
   //close the connection and exit the thread
@@ -104,17 +107,23 @@ int main() {
   // file_metadata_t* meta_info  = send_meta_data_info(peer_conn, "test.txt", 0, 53046, 0);
   // free(meta_info);  
   fileEntry_t* file = malloc(sizeof(fileEntry_t));
-  file -> size = 46786572;
+  file -> size = 6506;
 
   memset(file -> file_name, 0, FILE_NAME_MAX_LEN);
   memcpy(file -> file_name, "test.txt", strlen("test.txt"));
 
+  //spruce
   memset(file-> iplist[0], 0, IP_LEN);
   memcpy(file -> iplist[0], "129.170.214.213", strlen("129.170.214.213"));
 
+  //bear
+  memset(file-> iplist[1], 0, IP_LEN);
+  memcpy(file -> iplist[1], "129.170.213.32", strlen("129.170.213.32"));
 
+  //Josh local
   // memset(file-> iplist[0], 0, IP_LEN);
-  // memcpy(file -> iplist[0], "129.170.213.111", strlen("129.170.213.111"));
+  // memcpy(file -> iplist[0], "129.170.95.93", strlen("129.170.95.93"));
+
 
 
   file -> peerNum = 1;
@@ -123,12 +132,13 @@ int main() {
 
 
   int i = 0;
-  while (file -> iplist[i] ) {
+  while (strlen(file -> iplist[i]) != 0) {
+    printf("Creating list download thread for: %s\n", file -> iplist[i]);
 
-  arg_struct_t* args = create_arg_struct(entry, file -> iplist[i]);
-  
-  pthread_t p2p_download_thread;
-  pthread_create(&p2p_download_thread, NULL, p2p_download, args);
+    arg_struct_t* args = create_arg_struct(entry, file -> iplist[i]);
+    
+    pthread_t p2p_download_thread;
+    pthread_create(&p2p_download_thread, NULL, p2p_download, args);
 
 
     // printf("Starting Thread for Downloading From Ip: %s\n", file -> iplist[i]);
@@ -145,7 +155,6 @@ int main() {
     //   entry -> successful_pieces ++;
     //   printf("Finisiedh loop\n");
     // }
-    break;
     i++;
   }
 
@@ -154,6 +163,8 @@ int main() {
     sleep(1);
   }
  
+  printf("Main file: %s \n", entry -> file_name);
+  
   FILE* main_file = fopen(entry -> file_name , "w");
 
   if (main_file == NULL) {

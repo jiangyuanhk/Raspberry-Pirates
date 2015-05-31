@@ -24,25 +24,31 @@
 
 void* p2p_upload(void* arg) {
 
-  int peer_conn = *(int*) arg;
+  while(1) {
+    int peer_conn = *(int*) arg;
 
-  printf("Receiving file_metadata_t\n");
+    //get the filename of the file to send  
+    file_metadata_t* recv_metadata = malloc(sizeof(file_metadata_t));
+    
+    if (receive_meta_data_info(peer_conn, recv_metadata) < 0){
+      free(recv_metadata);
+      pthread_exit(NULL);
+    }
+
+    printf("Metadata. Name: %s, Size: %d, Start: %d\n", recv_metadata -> filename, recv_metadata -> size, recv_metadata -> start);
+
+    //Sending a file p2p
+    printf("Attempting to sending a file: %s \n", recv_metadata -> filename);
+    
+    if (send_data_p2p(peer_conn, recv_metadata) < 0) {
+      free(recv_metadata);
+      pthread_exit(NULL);
+    }
+
+    free(recv_metadata);
+  }
   
-  //get the filename of the file to send  
-  file_metadata_t* recv_metadata = malloc(sizeof(file_metadata_t));
-  
-  receive_meta_data_info(peer_conn, recv_metadata);
-
-  printf("Metadata. Name: %s, Size: %d, Start: %d\n", recv_metadata -> filename, recv_metadata -> size, recv_metadata -> start);
-
-  //Sending a file p2p 
-  printf("Sending a File: %s \n", recv_metadata -> filename);
-  
-  send_data_p2p(peer_conn, recv_metadata);
-
-  free(recv_metadata);
-
-  pthread_exit(0);
+  pthread_exit(NULL);
 }
 
 

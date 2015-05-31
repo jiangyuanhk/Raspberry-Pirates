@@ -100,7 +100,7 @@ void append_piece_to_list(downloadEntry_t* download_entry, downloadPiece_t* piec
 }
 
 downloadPiece_t* get_downloadPiece(downloadEntry_t* download_entry) {
-  
+  pthread_mutex_lock(download_entry -> mutex);
   downloadPiece_t* piece_to_download;
 
   if (download_entry -> size == 0) return NULL;
@@ -117,6 +117,8 @@ downloadPiece_t* get_downloadPiece(downloadEntry_t* download_entry) {
     download_entry -> head = new_head;
   }
 
+  download_entry -> size --;
+  pthread_mutex_unlock(download_entry -> mutex);
   return piece_to_download;
 }
 
