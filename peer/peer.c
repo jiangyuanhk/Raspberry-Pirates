@@ -452,142 +452,6 @@ void* p2p_upload(void* arg) {
   pthread_exit(NULL);
 }
 
-
-/* Thread to monitor local file changes.  When a file is changed locally, inform the tracker by sending the filetable
-  to the tracker.
-*//*
-void* file_monitor(void* arg) {
-  //initially send filetable to the tracker.
-  printf("Starting the File Monitor Thread.\n");
-  printf("Sending the Initial Filetable\n");
-
-  printf("File Table We Are Sending\n");
-  filetable_printFileTable(filetable);
-  
-  pthread_mutex_lock(filetable -> filetable_mutex);
-  ptp_peer_t* pkt = pkt_create_peerPkt();
-  char ip_address[IP_LEN];
-  get_my_ip(ip_address);
-  pkt_config_peerPkt(pkt, FILE_UPDATE, ip_address, HANDSHAKE_PORT, filetable -> size, filetable -> head);
-  pthread_mutex_unlock(filetable -> filetable_mutex);
-  pkt_peer_sendPkt(tracker_connection, pkt, filetable -> filetable_mutex);
-  printf("Successfully send the filetable packet.\n");
-
-  while(1) {
-    sleep(MONITOR_POLL_INTERVAL);
-
-    fileTable_t* updated_filetable = create_local_filetable(directory);
-    printf("Directory: %s\n", directory);
-    printf("Updated Filetable\n");
-    filetable_printFileTable(updated_filetable);
-    int need_to_update = 0;
-    
-    //loop through the old filetable and see if files are outdated or been deleted
-    fileEntry_t* file = filetable -> head;
-    while (file != NULL) {
-
-      //check to see if the file exists locally
-      fileEntry_t* updated_file = filetable_searchFileByName(updated_filetable, file -> file_name); 
-      
-      // if the updated_file is null, the old file is not in the table so must have been deleted
-      if(updated_file == NULL) {
-        printf("File deleted.  Local file tree has changed:%s\n", file -> file_name);
-        
-        //about to free the memory for th efile_name so need to keep the name
-        char name[FILE_NAME_MAX_LEN];
-        memset(name, 0, FILE_NAME_MAX_LEN);
-        memcpy(name, file -> file_name, FILE_NAME_MAX_LEN);
-
-        filetable_deleteFileEntryByName(filetable, file -> file_name);
-
-        //if its in the blocklist, do not need to update and remove from blocklist
-        if ( find_in_blocklist(delete_blocklist, file -> file_name) == 1){
-          printf("In block list. Ignoring change.\n");
-          remove_from_blocklist(delete_blocklist, file -> file_name);
-        }
-
-        //otherwise not in the blocklist and need to update
-        else {
-          printf("Need to send update.\n");
-          need_to_update = 1;
-        }
-      } 
-
-      //if the updated file exists but has a newer timestamp, the old file is outdated and needs to be updated
-      else if ( (updated_file -> timestamp) > (file -> timestamp) ) { 
-        printf("File outdated.  Local file tree has changed: %s \n", file -> file_name);
-        
-        filetable_updateFile(file, updated_file, filetable -> filetable_mutex);
-
-        //if its in the blocklist, do not need to update and remove from blocklist
-        if ( find_in_blocklist(update_blocklist, file -> file_name) == 1){
-          printf("In block list. Ignoring change and updating filetable.\n");
-          remove_from_blocklist(update_blocklist, file -> file_name);
-        }
-
-        //otherwise not in the blocklist and need to update
-        else {
-          printf("Need to send update.\n");
-          need_to_update = 1;
-        }
-      }
-
-      file = file -> next;  //move to next item in file table from tracker
-    }
-
-    fileEntry_t* updated_file = updated_filetable -> head;
-
-    //if do not need to update, loop through updated filetable and see if new files have been added
-    while (updated_file != NULL && !need_to_update) {
-
-      //check to see if the file previously existed.
-      fileEntry_t* old_file = filetable_searchFileByName(filetable, updated_file -> file_name);
-      
-      // if the old file is NULL, the updated file is new and has been added
-      if(old_file == NULL) {
-        printf("File added.  Local file tree has changed.\n");
-        
-        //copy the file entry into a new file entry and add to the file table
-        fileEntry_t* new_entry = malloc(sizeof(fileEntry_t));
-        memcpy(new_entry, updated_file, sizeof(fileEntry_t));  
-        new_entry -> next = NULL;      
-        filetable_appendFileEntry(filetable, new_entry);
-
-        //if its in the blocklist, do not need to update and remove from blocklist
-        if ( find_in_blocklist(update_blocklist, updated_file -> file_name) == 1){
-          printf("In block list. Ignoring change and updating filetable.\n");
-          remove_from_blocklist(update_blocklist, updated_file -> file_name);
-        }
-
-        //otherwise not in the blocklist and need to update
-        else {
-          printf("Need to send update.\n");
-          need_to_update = 1;
-        }
-      }
-      updated_file = updated_file -> next;
-    }
-
-    //if need to update, send the filetable to the tracker
-    if (need_to_update) {
-      printf("Sending Tracker the updated filetable.\n");
-      pthread_mutex_lock(filetable -> filetable_mutex);
-      ptp_peer_t* pkt = pkt_create_peerPkt();
-      char ip_address[IP_LEN];
-      get_my_ip(ip_address);
-      pkt_config_peerPkt(pkt, FILE_UPDATE, ip_address, HANDSHAKE_PORT, filetable -> size, filetable -> head);
-      pthread_mutex_unlock(filetable -> filetable_mutex);
-      pkt_peer_sendPkt(tracker_connection, pkt, filetable -> filetable_mutex);
-      printf("Successfully send the filetable packet.\n");
-    }
-
-  }
-
-
-  pthread_exit(NULL);
-}
-*/
-
 void* keep_alive(void* arg) {
   //int interval = *(int*) arg;
   ptp_peer_t* pkt = pkt_create_peerPkt();
@@ -812,11 +676,6 @@ int main(int argc, char *argv[]) {
   //Start the keep alive thread
   // pthread_t keep_alive_thread;
   // pthread_create(&keep_alive_thread, NULL, keep_alive, NULL);
-
-  printf("Begin the tracker listening thread. \n");
-  // start the thread to listen for data from the tracker
-  pthread_t tracker_listening_thread;
-  pthread_create(&tracker_listening_thread, NULL, tracker_listening, (void*)0);
   
   // start the thread to listen on the p2p port for connections from other peers
   pthread_t p2p_listening_thread;
@@ -856,6 +715,10 @@ int main(int argc, char *argv[]) {
 
   //printf("Begin initial sync with the peer. Send file table to peer.\n");
   //Peer_sendfiletable();
+  printf("Begin the tracker listening thread. \n");
+  // start the thread to listen for data from the tracker
+  pthread_t tracker_listening_thread;
+  pthread_create(&tracker_listening_thread, NULL, tracker_listening, (void*)0);
 
   while(noSIGINT) sleep(60);
 }
