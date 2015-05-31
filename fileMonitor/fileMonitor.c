@@ -500,7 +500,7 @@ void blockFileAddListening(char* filename) {
 	//sprintf(filepath, "%s%s", directory, filename);
 
 	FileBlockList* blockAdd = calloc(1, sizeof(FileBlockList));
-	blockAdd->filepath = filepath;
+	blockAdd->filepath = filename;
 	blockAdd->event = EVENT_ADDED;
 
 
@@ -520,7 +520,7 @@ void blockFileWriteListening(char* filename) {
 	//sprintf(filepath, "%s%s", directory, filename);
 
 	FileBlockList* blockWrite = calloc(1, sizeof(FileBlockList));
-	blockWrite->filepath = filepath;
+	blockWrite->filepath = filename;
 	blockWrite->event = EVENT_MODIFIED;
 
 
@@ -538,7 +538,7 @@ void blockFileDeleteListening(char* filename) {
 	//sprintf(filepath, "%s%s", directory, filename);
 
 	FileBlockList* blockDelete = calloc(1, sizeof(FileBlockList));
-	blockDelete->filepath = filepath;
+	blockDelete->filepath = filename;
 	blockDelete->event = EVENT_DELETED;
 
 
@@ -562,7 +562,7 @@ int unblockFileAddListening(char* filename) {
 		printf("Unexpected unblock failure for file %s", filename);
 	}
 
-	return FileBlockList_Remove(filepath, event);
+	return FileBlockList_Remove(filename, event);
 
 }
 /*
@@ -577,7 +577,7 @@ int unblockFileWriteListening(char* filename) {
 
 	int event = EVENT_MODIFIED;
 
-	return FileBlockList_Remove(filepath, event);
+	return FileBlockList_Remove(filename, event);
 
 }
 /*
@@ -592,7 +592,7 @@ int unblockFileDeleteListening(char* filename) {
 
 	int event = EVENT_DELETED;
 
-	return FileBlockList_Remove(filepath, event);
+	return FileBlockList_Remove(filename, event);
 
 }
 /*
