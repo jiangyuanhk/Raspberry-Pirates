@@ -527,6 +527,7 @@ void Filetable_peerModify(char* name) {
   else {
     printf("Update failed: File entry for %s not found\n", name);
   }
+  free(filepath);
 }
 /* 
 * Callback delete method for the File Monitor

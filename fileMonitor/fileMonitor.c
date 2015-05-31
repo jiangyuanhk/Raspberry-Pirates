@@ -370,6 +370,8 @@ void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs) {
 		else if (ftable->table[idx].lastModifyTime != newtable->table[i].lastModifyTime  && !FileBlockList_Search(filepath, EVENT_MODIFIED)) {
 			printf("File updated: %s\n",filename);
 			change = 1;
+			printf("Filename before file modified: %s\n", filename);
+			printf("Filepath: %s\n", filepath);
 			funcs->fileModified(filename);
 		}
 		free(filepath);
