@@ -447,7 +447,7 @@ void* p2p_upload(void* arg) {
   
   while(1) {
     //get the filename of the file to send  
-    file_metadata_t* recv_metadata = malloc(sizeof(file_metadata_t));
+    file_metadata_t* recv_metadata = calloc(1,sizeof(file_metadata_t));
     
     if (receive_meta_data_info(peer_conn, recv_metadata) < 0){
       printf("Error receiving metadata.  Exiting upload thread.\n");
@@ -458,7 +458,7 @@ void* p2p_upload(void* arg) {
     printf("Received the meta data info in upload thread.\n");
 
     //if the filename is not there, done uploading.
-    if (strlen(recv_metadata -> filename) == 0) {
+    if (recv_metadata -> filename == NULL) {
       printf("Error receiving metadata for the file\n");
       free(recv_metadata);
       pthread_exit(NULL);

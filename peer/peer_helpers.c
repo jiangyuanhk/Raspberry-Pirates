@@ -104,7 +104,7 @@ file_metadata_t* send_meta_data_info(int peer_conn, char* filepath, int start, i
 // Function that recevies a file_metadata_t struct from a peer.
 int receive_meta_data_info(int peer_conn, file_metadata_t* metadata) {
 int num;
-if ( (num = recv(peer_conn, metadata, sizeof(file_metadata_t), 0)) < 0) {
+if ( (num = recv(peer_conn, metadata, sizeof(file_metadata_t), 0)) <= 0) {
     return -1;
   }
 
