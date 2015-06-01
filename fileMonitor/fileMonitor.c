@@ -367,13 +367,15 @@ void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs) {
 			continue;
 		}
 		filepath = validatePath(filename);
-
+		pthread_mutex_lock(&blockList_mutex);
 		if(FilesInfo_table_search(filename, newtable) == -1 && !FileBlockList_Search(filepath, EVENT_DELETED)) {
+			pthread_mutex_unlock(&blockList_mutex);
 			printf("File deleted: %s\n",filename);
 			change = 1;
 			funcs->fileDeleted(filepath);
 		}
 		else {
+			pthread_mutex_unlock(&blockList_mutex);
 			free(filepath);
 		}
 	}
@@ -388,10 +390,15 @@ void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs) {
 
 		idx = FilesInfo_table_search(filename, ftable);
 		if(idx == -1) {
+			pthread_mutex_lock(&blockList_mutex);
 			if(!FileBlockList_Search(filepath, EVENT_ADDED)) {
+				pthread_mutex_unlock(&blockList_mutex);
 				printf("File added: %s\n",filename);
 				change = 1;
 				funcs->fileAdded(filename);
+			}
+			else {
+				pthread_mutex_unlock(&blockList_mutex);
 			}
 		}
 		else if (ftable->table[idx].lastModifyTime != newtable->table[i].lastModifyTime  && !FileBlockList_Search(filepath, EVENT_MODIFIED)) {
@@ -472,6 +479,7 @@ void FileBlockList_Append(FileBlockList* toAppend) {
 	}
 	else {
 		while(curr->next) {
+			printf("In block list append while loop\n");
 			curr = blockList->next;
 		}
 		curr->next = toAppend;
@@ -491,6 +499,7 @@ int FileBlockList_Search(char* filepath, int event) {
 		return 0;
 	}
 	while(curr->next) {
+		printf("In block list search while loop\n");
 		if(strcmp(filepath, curr->filepath) == 0) {
 			if(curr->event == event) {
 				return 1;
@@ -521,6 +530,7 @@ int FileBlockList_Remove(char* filepath, int event) {
 		return ret;
 	}
 	while(curr) {
+		printf("In blocklist remove while loop\n");
 		//will do the wrong thing if file name is part of a larger file name
 		if(strncmp(filepath, curr->filepath, strlen(filepath)) == 0) {
 			if(curr->event == event) {
@@ -705,11 +715,12 @@ void FileInfo_table_print(FileInfo_table* toPrint) {
 }
 
 void Blocklist_print() {
+	pthread_mutex_lock(&blockList_mutex);
 	if(blockList == NULL) {
+		pthread_mutex_unlock(&blockList_mutex);
 		return;
 	}
 	printf("The blocklist is as follows:\n");
-	pthread_mutex_lock(&blockList_mutex);
 	FileBlockList* curr = blockList;
 	while(curr) {
 		printf("\t%s | %d\n", curr->filepath, curr->event);
