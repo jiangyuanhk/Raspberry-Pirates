@@ -276,7 +276,7 @@ void* p2p_listening(void* arg) {
   while(noSIGINT) {
     int peer_conn;
 
-    printf("Listening for for a connection.\n");
+    printf("Listening for a connection.\n");
     peer_conn = accept(peer_sockfd, (struct sockaddr*) &other_peer_addr, &other_peer_addr_len);
     if (peer_conn < 0){
       printf("Error connecting with download thread.\n");
