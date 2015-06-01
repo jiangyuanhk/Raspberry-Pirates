@@ -434,12 +434,10 @@ void* p2p_download_file(void* arg) {
   //remove this from the peer table so know that the download is completed
   printf("Remove the entry for file %s from the downloadtable\n", file -> file_name);
   remove_entry_from_downloadtable(downloadtable, file -> file_name);
+  // Peer_sendfiletable();
   printf("Closing download file thread. \n");
   // if (file) free(file);
-  
-
-
-
+ 
   pthread_exit(NULL);
 }
 
@@ -513,6 +511,7 @@ void Peer_sendfiletable() {
   pthread_mutex_unlock(filetable -> filetable_mutex);
   pkt_peer_sendPkt(tracker_connection, pkt, filetable -> filetable_mutex);
   printf("Successfully send the filetable packet.\n");
+  free(pkt);
 }
 /*
 * Creates a fileEntry_t from a file name
