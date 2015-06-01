@@ -1,4 +1,4 @@
-all:  fileMonitor/fileMonitorTestClient tracker peer
+all: fileMonitor/fileMonitorTestClient tracker peer
 
 fileMonitor/fileMonitor.o: fileMonitor/fileMonitor.c fileMonitor/fileMonitor.h
 	gcc -Wall -pedantic -std=c11 -g -c fileMonitor/fileMonitor.c -o fileMonitor/fileMonitor.o

@@ -268,6 +268,11 @@ void* p2p_listening(void* arg) {
 
     printf("Listening for for a connection.\n");
     peer_conn = accept(peer_sockfd, (struct sockaddr*) &other_peer_addr, &other_peer_addr_len);
+    if (peer_conn < 0){
+      printf("Error connecting with download thread.\n");
+      continue;
+    }
+
     printf("Established a connection to a peer. Starting a P2PDownload Thread.\n");
 
     //start the p2p_download_thread
@@ -626,7 +631,7 @@ void peer_stop() {
   FileMonitor_close();
   close(tracker_connection);
   filetable_destroy(filetable);
-  //peertable_destroy(peertable); need to destroy the download list which doesnt have destroy yet
+  downloadtable_destroy(downloadtable);
   free(directory);
   exit(0);
 }

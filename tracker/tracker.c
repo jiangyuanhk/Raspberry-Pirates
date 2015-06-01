@@ -156,7 +156,7 @@ void *handshake(void* arg){
             for( i = 0; i < entry -> peerNum; i++) {
               memset(entry -> iplist[i], 0, IP_LEN);
             }
-
+            entry -> peerNum = 0;
             filetable_AddIp2Iplist(entry, pkt_recv.peer_ip, myFileTablePtr->filetable_mutex);
             needBroadCast = 1;
           }
@@ -337,7 +337,7 @@ int initial_sync_with_peer(int conn) {
       for( i = 0; i < entry -> peerNum; i++) {
         memset(entry -> iplist[i], 0, IP_LEN);
       }
-
+      entry -> peerNum = 0;
       filetable_AddIp2Iplist(entry, pkt_recv.peer_ip, myFileTablePtr->filetable_mutex);
     }
 
