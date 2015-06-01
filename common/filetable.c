@@ -51,7 +51,7 @@ fileTable_t* filetable_init() {
   Function to initialize a file entry.
 */
 fileEntry_t * filetable_createFileEntry(char* filepath, int size, unsigned long int timestamp, int type){
-  fileEntry_t* entry = malloc(sizeof(fileEntry_t));
+  fileEntry_t* entry = calloc(1, sizeof(fileEntry_t));
   entry -> next = NULL;
   entry -> peerNum = 0;
   entry -> file_type = type;

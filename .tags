@@ -1,0 +1,363 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+BUFFER_LEN	p2p/download/download.c	/^#define BUFFER_LEN /;"	d	file:
+BUFFER_SIZE	peer/peer_helpers.c	/^#define BUFFER_SIZE /;"	d	file:
+Blocklist_print	fileMonitor/fileMonitor.c	/^void Blocklist_print() {$/;"	f
+CONSTANTS_H	common/constants.h	/^#define CONSTANTS_H$/;"	d
+DEAD_PEER_TIMEOUT	common/constants.h	/^#define DEAD_PEER_TIMEOUT /;"	d
+DIRECTORY	common/filetable.h	/^#define DIRECTORY /;"	d
+DLL	p2p/downloadList.h	/^typedef struct DLL{$/;"	s
+DLLEntry	p2p/downloadList.h	/^typedef struct DLLEntry{$/;"	s
+DLLEntry_t	p2p/downloadList.h	/^} DLLEntry_t;$/;"	t	typeref:struct:DLLEntry
+DLL_addEntry	p2p/downloadList.c	/^int DLL_addEntry(DLL_t* list, char* filename){$/;"	f
+DLL_createEntry	p2p/downloadList.c	/^DLLEntry_t*	DLL_createEntry(char* filename){$/;"	f
+DLL_destroy	p2p/downloadList.c	/^int DLL_destroy(DLL_t* list){$/;"	f
+DLL_initList	p2p/downloadList.c	/^DLL_t* DLL_initList(){$/;"	f
+DLL_removeEntry	p2p/downloadList.c	/^int DLL_removeEntry(DLL_t* list, char* filename){$/;"	f
+DLL_t	p2p/downloadList.h	/^} DLL_t;$/;"	t	typeref:struct:DLL
+EVENT_ADDED	fileMonitor/fileMonitor.h	/^#define EVENT_ADDED /;"	d
+EVENT_DELETED	fileMonitor/fileMonitor.h	/^#define EVENT_DELETED /;"	d
+EVENT_MODIFIED	fileMonitor/fileMonitor.h	/^#define EVENT_MODIFIED /;"	d
+FILETABLE_H	common/filetable.h	/^#define FILETABLE_H$/;"	d
+FILE_MONITOR_H	fileMonitor/fileMonitor.h	/^#define FILE_MONITOR_H$/;"	d
+FILE_NAME_MAX_LEN	common/constants.h	/^#define FILE_NAME_MAX_LEN /;"	d
+FILE_UPDATE	common/pkt.h	/^#define FILE_UPDATE /;"	d
+FileBlockList	fileMonitor/fileMonitor.h	/^} FileBlockList;$/;"	t	typeref:struct:fileBlockList
+FileBlockList_Append	fileMonitor/fileMonitor.c	/^void FileBlockList_Append(FileBlockList* toAppend) {$/;"	f
+FileBlockList_Remove	fileMonitor/fileMonitor.c	/^int FileBlockList_Remove(char* filepath, int event) {$/;"	f
+FileBlockList_Search	fileMonitor/fileMonitor.c	/^int FileBlockList_Search(char* filepath, int event) {$/;"	f
+FileEntry_create	peer/peer.c	/^fileEntry_t* FileEntry_create(char* name) {$/;"	f
+FileInfo	fileMonitor/fileMonitor.h	/^} FileInfo;$/;"	t	typeref:struct:__anon1
+FileInfo_table	fileMonitor/fileMonitor.h	/^} FileInfo_table;$/;"	t	typeref:struct:__anon2
+FileInfo_table_Subdirectory	fileMonitor/fileMonitor.c	/^int FileInfo_table_Subdirectory(FileInfo_table* allfiles, char* subdirectory_path, int idx) {$/;"	f
+FileInfo_table_SubdirectoryFileCount	fileMonitor/fileMonitor.c	/^int FileInfo_table_SubdirectoryFileCount(char* subdirectory_path) {$/;"	f
+FileInfo_table_destroy	fileMonitor/fileMonitor.c	/^void FileInfo_table_destroy(FileInfo_table* table) {$/;"	f
+FileInfo_table_print	fileMonitor/fileMonitor.c	/^void FileInfo_table_print(FileInfo_table* toPrint) {$/;"	f
+FileMonitor_close	fileMonitor/fileMonitor.c	/^void FileMonitor_close() {$/;"	f
+FileMonitor_freeAll	fileMonitor/fileMonitor.c	/^void FileMonitor_freeAll() {$/;"	f
+FilesInfo_UpdateAlerts	fileMonitor/fileMonitor.c	/^void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs) {$/;"	f
+FilesInfo_table_search	fileMonitor/fileMonitor.c	/^int FilesInfo_table_search(char* name, FileInfo_table* fItable) {$/;"	f
+Filetable_peerAdd	peer/peer.c	/^void Filetable_peerAdd(char* name) {$/;"	f
+Filetable_peerDelete	peer/peer.c	/^void Filetable_peerDelete(char* name) {$/;"	f
+Filetable_peerModify	peer/peer.c	/^void Filetable_peerModify(char* name) {$/;"	f
+Filetable_peerSync	peer/peer.c	/^void Filetable_peerSync() {$/;"	f
+HANDSHAKE_PORT	common/constants.h	/^#define HANDSHAKE_PORT /;"	d
+HEARTBEAT_INTERVAL	common/constants.h	/^#define HEARTBEAT_INTERVAL /;"	d
+IP_LEN	common/constants.h	/^#define IP_LEN /;"	d
+KEEP_ALIVE	common/pkt.h	/^#define KEEP_ALIVE /;"	d
+MAX_FILEPATH_LEN	common/constants.h	/^#define MAX_FILEPATH_LEN /;"	d
+MAX_HOSTNAME_SIZE	common/constants.h	/^#define MAX_HOSTNAME_SIZE /;"	d
+MAX_NUM_PEERS	common/constants.h	/^#define MAX_NUM_PEERS /;"	d
+MONITOR_ALIVE_INTERVAL	common/constants.h	/^#define MONITOR_ALIVE_INTERVAL /;"	d
+MONITOR_POLL_INTERVAL	common/constants.h	/^#define MONITOR_POLL_INTERVAL /;"	d
+P2P_H	p2p/p2p.h	/^#define P2P_H$/;"	d
+P2P_PORT	common/constants.h	/^#define P2P_PORT /;"	d
+PEER_H	peer/peer.h	/^#define PEER_H$/;"	d
+PEER_HELPERS_H	peer/peer_helpers.h	/^#define PEER_HELPERS_H$/;"	d
+PEER_TABLE_H	common/peertable.h	/^#define PEER_TABLE_H$/;"	d
+PIECE_LENGTH	common/constants.h	/^#define PIECE_LENGTH /;"	d
+PKT_H	common/pkt.h	/^#define PKT_H$/;"	d
+PROTOCOL_LEN	common/constants.h	/^#define PROTOCOL_LEN /;"	d
+Peer_sendfiletable	peer/peer.c	/^void Peer_sendfiletable() {$/;"	f
+REGISTER	common/pkt.h	/^#define REGISTER /;"	d
+REGULAR_FILE	common/filetable.h	/^#define REGULAR_FILE /;"	d
+RESERVED_LEN	common/constants.h	/^#define RESERVED_LEN /;"	d
+TRACKER_H	tracker/tracker.h	/^#define TRACKER_H$/;"	d
+UTILS_H	common/utils.h	/^#define UTILS_H$/;"	d
+add_entry_to_downloadtable	peer/peer_helpers.c	/^void add_entry_to_downloadtable(downloadTable_t* downloadtable, downloadEntry_t* entry) {$/;"	f
+add_file_to_blocklist	peer/file_monitor.c	/^void add_file_to_blocklist(blockList_t* blocklist, char* filepath) {$/;"	f
+append_piece_to_list	p2p/p2p.c	/^void append_piece_to_list(downloadEntry_t* download_entry, downloadPiece_t* piece) {$/;"	f
+append_piece_to_list	peer/peer_helpers.c	/^void append_piece_to_list(downloadEntry_t* download_entry, downloadPiece_t* piece) {$/;"	f
+argStruct	p2p/p2p.h	/^typedef struct argStruct {$/;"	s
+argStruct	peer/peer_helpers.h	/^typedef struct argStruct {$/;"	s
+arg_struct_t	p2p/p2p.h	/^}arg_struct_t;$/;"	t	typeref:struct:argStruct
+arg_struct_t	peer/peer_helpers.h	/^}arg_struct_t;$/;"	t	typeref:struct:argStruct
+blockFileAddListening	fileMonitor/fileMonitor.c	/^void blockFileAddListening(char* filename) {$/;"	f
+blockFileDeleteListening	fileMonitor/fileMonitor.c	/^void blockFileDeleteListening(char* filename) {$/;"	f
+blockFileWriteListening	fileMonitor/fileMonitor.c	/^void blockFileWriteListening(char* filename) {$/;"	f
+blockList	fileMonitor/fileMonitor.c	/^FileBlockList* blockList;$/;"	v
+blockList_mutex	fileMonitor/fileMonitor.c	/^pthread_mutex_t blockList_mutex;     \/\/block list mutex$/;"	v
+blockList_t	peer/file_monitor.h	/^} blockList_t;$/;"	t	typeref:struct:__anon4
+blocklist_init	peer/file_monitor.c	/^blockList_t* blocklist_init() {$/;"	f
+broadcastFileTable	tracker/tracker.c	/^void broadcastFileTable() {$/;"	f
+connect_to_tracker	peer/peer.c	/^int connect_to_tracker() {$/;"	f
+createMockFileTable	TestFolder/filetable_test.c	/^fileTable_t* createMockFileTable() {$/;"	f
+create_arg_struct	p2p/p2p.c	/^arg_struct_t* create_arg_struct(downloadEntry_t* download_entry, char* ip) {$/;"	f
+create_arg_struct	peer/peer_helpers.c	/^arg_struct_t* create_arg_struct(downloadEntry_t* download_entry, char* ip) {$/;"	f
+create_blocklist_entry	peer/file_monitor.c	/^file_t* create_blocklist_entry(char* filepath) {$/;"	f
+create_local_filetable	peer/file_monitor.c	/^fileTable_t* create_local_filetable(char* root_dir) {$/;"	f
+create_mock_file_entry	TestFolder/filetable_test.c	/^fileEntry_t* create_mock_file_entry(char* filename, int size){$/;"	f
+create_mock_peer_entry	TestFolder/peertable_test.c	/^peerEntry_t* create_mock_peer_entry(char* ip, int sockfd){$/;"	f
+create_mock_peertable	TestFolder/peertable_test.c	/^peerTable_t* create_mock_peertable() {$/;"	f
+create_server_socket	tracker/tracker.c	/^int create_server_socket(int portNum) {$/;"	f
+delete_folder_tree	peer/peer.c	/^void delete_folder_tree (const char* directory_name) {$/;"	f
+delete_timer	peer/peer.c	/^void* delete_timer(void* arg) {$/;"	f
+directory	fileMonitor/fileMonitor.c	/^char* directory = NULL;$/;"	v
+directory	peer/peer.c	/^char* directory;$/;"	v
+downloadEntry	p2p/p2p.h	/^typedef struct downloadEntry {$/;"	s
+downloadEntry	peer/peer_helpers.h	/^typedef struct downloadEntry {$/;"	s
+downloadEntry_t	p2p/p2p.h	/^} downloadEntry_t;$/;"	t	typeref:struct:downloadEntry
+downloadEntry_t	peer/peer_helpers.h	/^} downloadEntry_t;$/;"	t	typeref:struct:downloadEntry
+downloadPiece	p2p/p2p.h	/^typedef struct downloadPiece {$/;"	s
+downloadPiece	peer/peer_helpers.h	/^typedef struct downloadPiece {$/;"	s
+downloadPiece_t	p2p/p2p.h	/^} downloadPiece_t;$/;"	t	typeref:struct:downloadPiece
+downloadPiece_t	peer/peer_helpers.h	/^} downloadPiece_t;$/;"	t	typeref:struct:downloadPiece
+downloadTable_t	p2p/p2p.h	/^}downloadTable_t;$/;"	t	typeref:struct:peer_downloadTable
+downloadTable_t	peer/peer_helpers.h	/^}downloadTable_t;$/;"	t	typeref:struct:peer_downloadTable
+download_entry	p2p/p2p.h	/^    downloadEntry_t* download_entry;        \/\/ the download entry for the file$/;"	m	struct:argStruct
+download_entry	peer/peer_helpers.h	/^    downloadEntry_t* download_entry;        \/\/ the download entry for the file$/;"	m	struct:argStruct
+downloadtable	peer/peer.c	/^downloadTable_t* downloadtable;      \/\/peer table to keep track of ongoing downloading tasks$/;"	v
+downloadtable_destroy	peer/peer_helpers.c	/^void downloadtable_destroy(downloadTable_t* downloadtable) {$/;"	f
+event	fileMonitor/fileMonitor.h	/^	int event;$/;"	m	struct:fileBlockList
+fileAdded	fileMonitor/fileMonitor.h	/^	void (*fileAdded)(char *);$/;"	m	struct:__anon3
+fileBlockEntry	peer/file_monitor.h	/^typedef struct fileBlockEntry {$/;"	s
+fileBlockList	fileMonitor/fileMonitor.h	/^typedef struct fileBlockList{$/;"	s
+fileDeleted	fileMonitor/fileMonitor.h	/^	void (*fileDeleted)(char *);$/;"	m	struct:__anon3
+fileEntry	common/filetable.h	/^typedef struct fileEntry{$/;"	s
+fileEntry	testing/recursivelyDir.c	/^typedef struct fileEntry{$/;"	s	file:
+fileEntry_t	common/filetable.h	/^}fileEntry_t;$/;"	t	typeref:struct:fileEntry
+fileEntry_t	testing/recursivelyDir.c	/^}fileEntry_t;$/;"	t	typeref:struct:fileEntry	file:
+fileModified	fileMonitor/fileMonitor.h	/^	void (*fileModified)(char *);$/;"	m	struct:__anon3
+fileMonitorThread	fileMonitor/fileMonitor.c	/^void *fileMonitorThread(void* arg) {$/;"	f
+fileSync	fileMonitor/fileMonitor.h	/^	void (*fileSync)(void);$/;"	m	struct:__anon3
+fileTable	common/filetable.h	/^typedef struct fileTable{$/;"	s
+fileTable_t	common/filetable.h	/^}fileTable_t;$/;"	t	typeref:struct:fileTable
+file_metadata	peer/peer_helpers.h	/^typedef struct file_metadata{$/;"	s
+file_metadata_t	peer/peer_helpers.h	/^} file_metadata_t;$/;"	t	typeref:struct:file_metadata
+file_name	common/filetable.h	/^ char file_name[FILE_NAME_MAX_LEN]; \/\/the name of the file, must be unique in the same directory$/;"	m	struct:fileEntry
+file_name	common/peertable.h	/^    char file_name[FILE_NAME_MAX_LEN];  \/\/peer: Current downloading file name$/;"	m	struct:peerEntry
+file_name	p2p/p2p.h	/^  char file_name[FILE_NAME_MAX_LEN];  \/\/ filepath of the local file being downloaded$/;"	m	struct:downloadEntry
+file_name	peer/file_monitor.h	/^	char file_name[FILE_NAME_MAX_LEN];$/;"	m	struct:fileBlockEntry
+file_name	peer/peer_helpers.h	/^  char file_name[FILE_NAME_MAX_LEN];  \/\/ filepath of the local file being downloaded$/;"	m	struct:downloadEntry
+file_t	peer/file_monitor.h	/^} file_t;$/;"	t	typeref:struct:fileBlockEntry
+file_type	common/filetable.h	/^ mode_t file_type;$/;"	m	struct:fileEntry
+filename	p2p/downloadList.h	/^    char filename[FILE_NAME_MAX_LEN];$/;"	m	struct:DLLEntry
+filename	peer/peer_helpers.h	/^char filename[100];$/;"	m	struct:file_metadata
+filepath	fileMonitor/fileMonitor.h	/^	char* filepath;$/;"	m	struct:fileBlockList
+filepath	fileMonitor/fileMonitor.h	/^  char* filepath;			\/\/path of the file$/;"	m	struct:__anon1
+filesChanged	fileMonitor/fileMonitor.h	/^	void (*filesChanged)(void);$/;"	m	struct:__anon3
+filetable	peer/peer.c	/^fileTable_t* filetable;               \/\/local file table to keep track of files in the directory$/;"	v
+filetableHeadPtr	common/pkt.h	/^	fileEntry_t* filetableHeadPtr;	 \/\/array, by converting linkedlist of fileEntries$/;"	m	struct:segment_tracker
+filetableHeadPtr	common/pkt.h	/^	fileEntry_t* filetableHeadPtr;    \/\/array, by converting linkedlist of fileEntries$/;"	m	struct:segment_peer
+filetable_AddIp2Iplist	common/filetable.c	/^int filetable_AddIp2Iplist(fileEntry_t* entry, char* peerip, pthread_mutex_t* tablemutex) {$/;"	f
+filetable_appendFileEntry	common/filetable.c	/^void filetable_appendFileEntry(fileTable_t* tablePtr, fileEntry_t* newEntryPtr){$/;"	f
+filetable_convertArrayToFileEntires	common/filetable.c	/^fileEntry_t* filetable_convertArrayToFileEntires(char* buf, int num){$/;"	f
+filetable_convertEntriesToFileTable	common/filetable.c	/^fileTable_t* filetable_convertEntriesToFileTable(fileEntry_t* head_file) {$/;"	f
+filetable_convertFileEntriesToArray	common/filetable.c	/^char* filetable_convertFileEntriesToArray(fileEntry_t* entry, int num, pthread_mutex_t* tablemutex){$/;"	f
+filetable_createFileEntry	common/filetable.c	/^fileEntry_t * filetable_createFileEntry(char* filepath, int size, unsigned long int timestamp, int type){$/;"	f
+filetable_deleteFileEntryByName	common/filetable.c	/^int filetable_deleteFileEntryByName(fileTable_t* tablePtr, char* filename){$/;"	f
+filetable_deleteIpfromAllEntries	common/filetable.c	/^int filetable_deleteIpfromAllEntries(fileTable_t* table, char* peerip){$/;"	f
+filetable_deleteIpfromIplist	common/filetable.c	/^int filetable_deleteIpfromIplist(fileEntry_t* entry, char* peerip, pthread_mutex_t* tablemutex) {$/;"	f
+filetable_destroy	common/filetable.c	/^void filetable_destroy(fileTable_t *tablePtr){$/;"	f
+filetable_init	common/filetable.c	/^fileTable_t* filetable_init() {$/;"	f
+filetable_mutex	common/filetable.h	/^    pthread_mutex_t* filetable_mutex; \/\/ mutex for the file table$/;"	m	struct:fileTable
+filetable_printFileTable	common/filetable.c	/^void filetable_printFileTable(fileTable_t* tablePtr) {$/;"	f
+filetable_searchFileByName	common/filetable.c	/^fileEntry_t* filetable_searchFileByName(fileTable_t* tablePtr, char* filename) {$/;"	f
+filetable_searchFileByNameWithoutMutex	common/filetable.c	/^fileEntry_t* filetable_searchFileByNameWithoutMutex(fileEntry_t* head, char* filename) {$/;"	f
+filetable_updateFile	common/filetable.c	/^int filetable_updateFile(fileEntry_t* oldEntryPtr, fileEntry_t* newEntryPtr, pthread_mutex_t* tablemutex) {$/;"	f
+filetablesize	common/pkt.h	/^	int filetablesize;				       \/\/ number of entries in the filetable$/;"	m	struct:segment_tracker
+filetablesize	common/pkt.h	/^	int filetablesize;		            \/\/ number of entries in the file table$/;"	m	struct:segment_peer
+fill_filetable	peer/file_monitor.c	/^void fill_filetable(fileTable_t* filetable, char *dir, char* prefix, int depth) {$/;"	f
+find_in_blocklist	peer/file_monitor.c	/^int find_in_blocklist(blockList_t* blocklist, char* filepath) {$/;"	f
+ftable	fileMonitor/fileMonitor.c	/^FileInfo_table* ftable;$/;"	v
+getAllFilesInfo	fileMonitor/fileMonitor.c	/^FileInfo_table* getAllFilesInfo() {$/;"	f
+getCurrentTime	common/utils.c	/^unsigned long getCurrentTime(){$/;"	f
+getFileInfo	fileMonitor/fileMonitor.c	/^FileInfo getFileInfo(char* filename) {$/;"	f
+getFilesize	testing/recursivelyDir.c	/^unsigned int getFilesize(const char* filename) {$/;"	f
+get_downloadPiece	p2p/p2p.c	/^downloadPiece_t* get_downloadPiece(downloadEntry_t* download_entry) {$/;"	f
+get_downloadPiece	peer/peer_helpers.c	/^downloadPiece_t* get_downloadPiece(downloadEntry_t* download_entry) {$/;"	f
+get_file_size	peer/peer_helpers.c	/^int get_file_size(char* filepath) {$/;"	f
+get_my_ip	common/utils.c	/^int get_my_ip(char* ip_address) {$/;"	f
+handshake	tracker/tracker.c	/^void *handshake(void* arg){$/;"	f
+head	common/filetable.h	/^    fileEntry_t* head;  \/\/ header of file table$/;"	m	struct:fileTable
+head	common/peertable.h	/^    peerEntry_t* head;$/;"	m	struct:peer_peertable
+head	p2p/downloadList.h	/^    DLLEntry* head;$/;"	m	struct:DLL
+head	p2p/p2p.h	/^    downloadEntry_t* head;                  \/\/ head of the linked list of download entries$/;"	m	struct:peer_downloadTable
+head	p2p/p2p.h	/^  downloadPiece_t* head;              \/\/ the head of the piece linked list$/;"	m	struct:downloadEntry
+head	peer/file_monitor.h	/^	struct fileBlockEntry* head;$/;"	m	struct:__anon4	typeref:struct:__anon4::fileBlockEntry
+head	peer/peer_helpers.h	/^    downloadEntry_t* head;                  \/\/ head of the linked list of download entries$/;"	m	struct:peer_downloadTable
+head	peer/peer_helpers.h	/^  downloadPiece_t* head;              \/\/ the head of the piece linked list$/;"	m	struct:downloadEntry
+heartbeat_interval	peer/peer.c	/^int heartbeat_interval;$/;"	v
+heartbeatinterval	common/pkt.h	/^	int heartbeatinterval; 			     \/\/ time interval that the peer should sending alive message periodically int interval;$/;"	m	struct:segment_tracker
+init_downloadEntry	p2p/p2p.c	/^downloadEntry_t* init_downloadEntry(fileEntry_t* file, int piece_len) {$/;"	f
+init_downloadEntry	peer/peer_helpers.c	/^downloadEntry_t* init_downloadEntry(fileEntry_t* file, int piece_len) {$/;"	f
+init_downloadPiece	p2p/p2p.c	/^downloadPiece_t* init_downloadPiece(int start, int size, int piece_num) {$/;"	f
+init_downloadPiece	peer/peer_helpers.c	/^downloadPiece_t* init_downloadPiece(int start, int size, int piece_num) {$/;"	f
+init_downloadTable	p2p/p2p.c	/^downloadTable_t* init_downloadTable() {$/;"	f
+init_downloadTable	peer/peer_helpers.c	/^downloadTable_t* init_downloadTable() {$/;"	f
+initial_sync_with_peer	tracker/tracker.c	/^int initial_sync_with_peer(int conn) {$/;"	f
+ip	common/peertable.h	/^    char ip[IP_LEN];$/;"	m	struct:peerEntry
+ip	p2p/p2p.h	/^    char ip[IP_LEN];$/;"	m	struct:argStruct
+ip	p2p/p2p.h	/^  char ip[IP_LEN];                      \/\/ IP address from which the piece was downloaded$/;"	m	struct:downloadPiece
+ip	peer/peer_helpers.h	/^    char ip[IP_LEN];$/;"	m	struct:argStruct
+ip	peer/peer_helpers.h	/^  char ip[IP_LEN];                      \/\/ IP address from which the piece was downloaded$/;"	m	struct:downloadPiece
+iplist	common/filetable.h	/^ char iplist[MAX_NUM_PEERS][IP_LEN]; \/\/tracker:  this is a list of peers' ips posessing the file$/;"	m	struct:fileEntry
+iplist	testing/recursivelyDir.c	/^ char iplist[MAX_PEER_NUM][IP_LEN]; \/\/tracker:  this is a list of peers' ips posessing the file$/;"	m	struct:fileEntry	file:
+keep_alive	peer/peer.c	/^void* keep_alive(void* arg) {$/;"	f
+lastModifyTime	fileMonitor/fileMonitor.h	/^  unsigned long int lastModifyTime; \/\/time stamp$/;"	m	struct:__anon1
+localFileAlerts	fileMonitor/fileMonitor.h	/^} localFileAlerts;$/;"	t	typeref:struct:__anon3
+main	TestFolder/filetable_test.c	/^int main() {$/;"	f
+main	TestFolder/peertable_test.c	/^int main() {$/;"	f
+main	fileMonitor/fileMonitorTestClient.c	/^int main(int argc, char *argv[]) {$/;"	f
+main	p2p/download/download.c	/^int main() {$/;"	f
+main	p2p/upload/upload.c	/^int main() {$/;"	f
+main	peer/peer.c	/^int main(int argc, char *argv[]) {$/;"	f
+main	testing/recursivelyDir.c	/^int main(void)$/;"	f
+main	tracker/tracker.c	/^ int main() {$/;"	f
+monitorAlive	tracker/tracker.c	/^void* monitorAlive(void* arg){$/;"	f
+mutex	p2p/downloadList.h	/^    pthread_mutex_t* mutex;$/;"	m	struct:DLL
+mutex	p2p/p2p.h	/^    pthread_mutex_t* mutex;                 \/\/ mutex lock for the download table$/;"	m	struct:peer_downloadTable
+mutex	p2p/p2p.h	/^  pthread_mutex_t* mutex;       \/\/ mutex for the linked list of pieces$/;"	m	struct:downloadEntry
+mutex	peer/file_monitor.h	/^	pthread_mutex_t* mutex;$/;"	m	struct:__anon4
+mutex	peer/peer_helpers.h	/^    pthread_mutex_t* mutex;                 \/\/ mutex lock for the download table$/;"	m	struct:peer_downloadTable
+mutex	peer/peer_helpers.h	/^  pthread_mutex_t* mutex;             \/\/ mutex for the linked list of pieces$/;"	m	struct:downloadEntry
+myFileTablePtr	tracker/tracker.c	/^fileTable_t* myFileTablePtr;$/;"	v
+myPeerTablePtr	tracker/tracker.c	/^peerTable_t* myPeerTablePtr;$/;"	v
+name	testing/recursivelyDir.c	/^ char *name;$/;"	m	struct:fileEntry	file:
+next	common/filetable.h	/^ struct fileEntry* next;            \/\/pointer to build the linked list$/;"	m	struct:fileEntry	typeref:struct:fileEntry::fileEntry
+next	common/peertable.h	/^    struct peerEntry *next;$/;"	m	struct:peerEntry	typeref:struct:peerEntry::peerEntry
+next	fileMonitor/fileMonitor.h	/^	struct fileBlockList* next;$/;"	m	struct:fileBlockList	typeref:struct:fileBlockList::fileBlockList
+next	p2p/downloadList.h	/^    struct DLLEntry* next;$/;"	m	struct:DLLEntry	typeref:struct:DLLEntry::DLLEntry
+next	p2p/p2p.h	/^  struct downloadEntry *next;         \/\/ the next download entry in the download entry list$/;"	m	struct:downloadEntry	typeref:struct:downloadEntry::downloadEntry
+next	p2p/p2p.h	/^  struct downloadPiece *next;           \/\/ the next piece in the piece_list$/;"	m	struct:downloadPiece	typeref:struct:downloadPiece::downloadPiece
+next	peer/file_monitor.h	/^	struct fileBlockEntry* next;$/;"	m	struct:fileBlockEntry	typeref:struct:fileBlockEntry::fileBlockEntry
+next	peer/peer_helpers.h	/^  struct downloadEntry *next;         \/\/ the next download entry in the download entry list$/;"	m	struct:downloadEntry	typeref:struct:downloadEntry::downloadEntry
+next	peer/peer_helpers.h	/^  struct downloadPiece *next;           \/\/ the next piece in the piece_list$/;"	m	struct:downloadPiece	typeref:struct:downloadPiece::downloadPiece
+noSIGINT	peer/peer.c	/^int noSIGINT = 1;$/;"	v
+num_files	fileMonitor/fileMonitor.h	/^	int num_files;			\/\/number of files in the table$/;"	m	struct:__anon2
+num_pieces	p2p/p2p.h	/^  int num_pieces;                     \/\/ the number of pieces the file is broken into$/;"	m	struct:downloadEntry
+num_pieces	peer/peer_helpers.h	/^  int num_pieces;                     \/\/ the number of pieces the file is broken into$/;"	m	struct:downloadEntry
+p2p_download	p2p/download/download.c	/^void* p2p_download(void* arg) {$/;"	f
+p2p_download	peer/peer.c	/^void* p2p_download(void* arg) {$/;"	f
+p2p_download_file	peer/peer.c	/^void* p2p_download_file(void* arg) {$/;"	f
+p2p_listening	peer/peer.c	/^void* p2p_listening(void* arg) {$/;"	f
+p2p_upload	p2p/upload/upload.c	/^void* p2p_upload(void* arg) {$/;"	f
+p2p_upload	peer/peer.c	/^void* p2p_upload(void* arg) {$/;"	f
+pNext	testing/recursivelyDir.c	/^ struct fileEntry *pNext;$/;"	m	struct:fileEntry	typeref:struct:fileEntry::fileEntry	file:
+peerEntry	common/peertable.h	/^typedef struct peerEntry {$/;"	s
+peerEntry_t	common/peertable.h	/^} peerEntry_t;$/;"	t	typeref:struct:peerEntry
+peerNum	common/filetable.h	/^ int peerNum;   					\/\/tracker: number of peers in the ip list                    $/;"	m	struct:fileEntry
+peerNum	testing/recursivelyDir.c	/^ int peerNum;$/;"	m	struct:fileEntry	file:
+peerTable_t	common/peertable.h	/^}peerTable_t;$/;"	t	typeref:struct:peer_peertable
+peer_downloadTable	p2p/p2p.h	/^typedef struct peer_downloadTable {$/;"	s
+peer_downloadTable	peer/peer_helpers.h	/^typedef struct peer_downloadTable {$/;"	s
+peer_ip	common/pkt.h	/^	char peer_ip[IP_LEN]; 			      \/\/ the peer ip address sending this packet$/;"	m	struct:segment_peer
+peer_peertable	common/peertable.h	/^typedef struct peer_peertable{$/;"	s
+peer_stop	peer/peer.c	/^void peer_stop() {$/;"	f
+peertable_addEntry	common/peertable.c	/^int peertable_addEntry(peerTable_t* table, peerEntry_t* entry) {$/;"	f
+peertable_createEntry	common/peertable.c	/^peerEntry_t* peertable_createEntry(char* ip, int sockfd){$/;"	f
+peertable_deleteEntryByIp	common/peertable.c	/^int peertable_deleteEntryByIp(peerTable_t *table, char* ip) {$/;"	f
+peertable_destroy	common/peertable.c	/^void peertable_destroy(peerTable_t *table) {$/;"	f
+peertable_init	common/peertable.c	/^peerTable_t* peertable_init(){$/;"	f
+peertable_mutex	common/peertable.h	/^    pthread_mutex_t* peertable_mutex;$/;"	m	struct:peer_peertable
+peertable_printPeerTable	common/peertable.c	/^void peertable_printPeerTable(peerTable_t* peertable) {$/;"	f
+peertable_refreshTimestamp	common/peertable.c	/^int peertable_refreshTimestamp(peerEntry_t* entry){$/;"	f
+peertable_searchEntryByIp	common/peertable.c	/^peerEntry_t* peertable_searchEntryByIp(peerTable_t* table, char* ip) {$/;"	f
+piece_len	common/pkt.h	/^	int piece_len;					         \/\/ piece length$/;"	m	struct:segment_tracker
+piece_len	peer/peer.c	/^int piece_len;$/;"	v
+piece_num	p2p/p2p.h	/^  int piece_num;                        \/\/ the number of the piece to include in temp file$/;"	m	struct:downloadPiece
+piece_num	peer/peer_helpers.h	/^  int piece_num;                        \/\/ the number of the piece to include in temp file$/;"	m	struct:downloadPiece
+piece_num	peer/peer_helpers.h	/^int piece_num;$/;"	m	struct:file_metadata
+pkt_config_peerPkt	common/pkt.c	/^void pkt_config_peerPkt(ptp_peer_t* pkt,  int type, char* peer_ip, int port, int filetablesize, fileEntry_t* filetableHeadPtr){$/;"	f
+pkt_config_trackerPkt	common/pkt.c	/^void pkt_config_trackerPkt(ptp_tracker_t* pkt,  int heartbeatinterval, int piece_len, int filetablesize, fileEntry_t* filetableHeadPtr){$/;"	f
+pkt_create_peerPkt	common/pkt.c	/^ptp_peer_t* pkt_create_peerPkt(){$/;"	f
+pkt_create_trackerPkt	common/pkt.c	/^ptp_tracker_t* pkt_create_trackerPkt(){$/;"	f
+pkt_peer_recvPkt	common/pkt.c	/^int pkt_peer_recvPkt(int connfd, ptp_tracker_t* pkt){$/;"	f
+pkt_peer_sendPkt	common/pkt.c	/^int pkt_peer_sendPkt(int connfd, ptp_peer_t* pkt, pthread_mutex_t* mutex) {$/;"	f
+pkt_tracker_recvPkt	common/pkt.c	/^int pkt_tracker_recvPkt(int connfd, ptp_peer_t* pkt){$/;"	f
+pkt_tracker_sendPkt	common/pkt.c	/^int pkt_tracker_sendPkt(int connfd, ptp_tracker_t* pkt, pthread_mutex_t* mutex){$/;"	f
+port	common/pkt.h	/^	int port;						              \/\/ listening port number in p2p$/;"	m	struct:segment_peer
+printAdd	fileMonitor/fileMonitorTestClient.c	/^void printAdd(char* name) {$/;"	f
+printChange	fileMonitor/fileMonitorTestClient.c	/^void printChange() {$/;"	f
+printDelete	fileMonitor/fileMonitorTestClient.c	/^void printDelete(char* name) {$/;"	f
+printModify	fileMonitor/fileMonitorTestClient.c	/^void printModify(char* name) {$/;"	f
+printSync	fileMonitor/fileMonitorTestClient.c	/^void printSync() {$/;"	f
+ptp_peer_t	common/pkt.h	/^}ptp_peer_t;$/;"	t	typeref:struct:segment_peer
+ptp_tracker_t	common/pkt.h	/^} ptp_tracker_t;$/;"	t	typeref:struct:segment_tracker
+readConfigFile	fileMonitor/fileMonitor.c	/^char* readConfigFile(char* filename) {$/;"	f
+read_config_file	peer/file_monitor.c	/^char* read_config_file(char* filename) {$/;"	f
+readd_piece_to_list	p2p/p2p.c	/^void readd_piece_to_list(downloadEntry_t* download_entry, downloadPiece_t* piece) { $/;"	f
+readd_piece_to_list	peer/peer_helpers.c	/^void readd_piece_to_list(downloadEntry_t* download_entry, downloadPiece_t* piece) { $/;"	f
+receive_data_p2p	peer/peer_helpers.c	/^int receive_data_p2p(int peer_tracker_conn, file_metadata_t* metadata){$/;"	f
+receive_meta_data_info	peer/peer_helpers.c	/^int receive_meta_data_info(int peer_conn, file_metadata_t* metadata) {$/;"	f
+recombine_temp_files	p2p/download/download.c	/^int recombine_temp_files(char* filepath, int num_pieces) {$/;"	f
+recombine_temp_files	peer/peer_helpers.c	/^int recombine_temp_files(char* filepath, int num_pieces) {$/;"	f
+register_recv	peer/peer.c	/^int register_recv = 0;$/;"	v
+remove_entry_from_downloadtable	peer/peer_helpers.c	/^int remove_entry_from_downloadtable(downloadTable_t* downloadtable, char* filename){$/;"	f
+remove_from_blocklist	peer/file_monitor.c	/^int remove_from_blocklist(blockList_t* blocklist, char* filepath) {$/;"	f
+running	fileMonitor/fileMonitor.c	/^int running = 1;$/;"	v
+search_downloadtable_for_entry	peer/peer_helpers.c	/^downloadEntry_t* search_downloadtable_for_entry(downloadTable_t* downloadtable, char* filename) {$/;"	f
+segment_peer	common/pkt.h	/^typedef struct segment_peer {$/;"	s
+segment_tracker	common/pkt.h	/^typedef struct segment_tracker {$/;"	s
+send_data_p2p	peer/peer_helpers.c	/^int send_data_p2p(int peer_conn, file_metadata_t* metadata) {$/;"	f
+send_meta_data_info	peer/peer_helpers.c	/^file_metadata_t* send_meta_data_info(int peer_conn, char* filepath, int start, int size, int piece_num){$/;"	f
+size	common/filetable.h	/^    int size; $/;"	m	struct:fileTable
+size	common/filetable.h	/^ int size;                          \/\/the size of the file$/;"	m	struct:fileEntry
+size	common/peertable.h	/^    int size;$/;"	m	struct:peer_peertable
+size	fileMonitor/fileMonitor.h	/^  int size;					\/\/size of the file$/;"	m	struct:__anon1
+size	p2p/downloadList.h	/^    int size;$/;"	m	struct:DLL
+size	p2p/p2p.h	/^    int size;                               \/\/ num of files currently in the download table$/;"	m	struct:peer_downloadTable
+size	p2p/p2p.h	/^  int size;                             \/\/ the size of the piece to get$/;"	m	struct:downloadPiece
+size	p2p/p2p.h	/^  int size;                           \/\/ the size of the linked list of pieces$/;"	m	struct:downloadEntry
+size	peer/file_monitor.h	/^	int size;$/;"	m	struct:__anon4
+size	peer/peer_helpers.h	/^    int size;                               \/\/ num of files currently in the download table$/;"	m	struct:peer_downloadTable
+size	peer/peer_helpers.h	/^  int size;                             \/\/ the size of the piece to get$/;"	m	struct:downloadPiece
+size	peer/peer_helpers.h	/^  int size;                           \/\/ the size of the linked list of pieces$/;"	m	struct:downloadEntry
+size	peer/peer_helpers.h	/^int size;                   \/\/how large the file\/ part you are sending is$/;"	m	struct:file_metadata
+size	testing/recursivelyDir.c	/^ int size;$/;"	m	struct:fileEntry	file:
+sockfd	common/peertable.h	/^    int sockfd;$/;"	m	struct:peerEntry
+sockfd	p2p/p2p.h	/^  int sockfd;                           \/\/ the TCP connection to the remote peer$/;"	m	struct:downloadPiece
+sockfd	peer/peer_helpers.h	/^  int sockfd;                           \/\/ the TCP connection to the remote peer$/;"	m	struct:downloadPiece
+start	p2p/p2p.h	/^  int start;                            \/\/ the start position in the file that downloading$/;"	m	struct:downloadPiece
+start	peer/peer_helpers.h	/^  int start;                            \/\/ the start position in the file that downloading$/;"	m	struct:downloadPiece
+start	peer/peer_helpers.h	/^int start;                  \/\/the location of the first byte of data for the file$/;"	m	struct:file_metadata
+std	Makefile	/^	gcc -Wall -pedantic -std=c99 -D_POSIX_SOURCE -D_BSD_SOURCE -g -pthread fileMonitor\/fileMonitorTestClient.c fileMonitor\/fileMonitor.o -o fileMonitor\/fileMonitorTestClient$/;"	m
+std	Makefile	/^	gcc -Wall -pedantic -std=c99 -D_POSIX_SOURCE -D_BSD_SOURCE -pthread -g -c fileMonitor\/fileMonitor.c -o fileMonitor\/fileMonitor.o$/;"	m
+std	Makefile	/^	gcc -Wall -pedantic -std=c99 -ggdb -D_GNU_SOURCE -pthread -o app_peer peer\/peer.c common\/pkt.c common\/filetable.c common\/peertable.c common\/utils.c peer\/peer_helpers.c peer\/file_monitor.c fileMonitor\/fileMonitor.o$/;"	m
+std	Makefile	/^	gcc -Wall -pedantic -std=c99 -ggdb -D_GNU_SOURCE -pthread -o app_tracker tracker\/tracker.c common\/pkt.c common\/filetable.c common\/peertable.c common\/utils.c$/;"	m
+successful_pieces	p2p/p2p.h	/^  int successful_pieces;              \/\/ the number of pieces succcesfully sent$/;"	m	struct:downloadEntry
+successful_pieces	peer/peer_helpers.h	/^  int successful_pieces;              \/\/ the number of pieces succcesfully sent$/;"	m	struct:downloadEntry
+svr_sd	tracker/tracker.c	/^int svr_sd; \/\/ tracker side socket binded with HANDSHAKE_PORT$/;"	v
+table	fileMonitor/fileMonitor.h	/^  	FileInfo* table;		\/\/the table of files$/;"	m	struct:__anon2
+tail	common/filetable.h	/^    fileEntry_t* tail; \/\/ tail of file table (for appending operation), make sure tail's next is NULL$/;"	m	struct:fileTable
+tail	common/peertable.h	/^    peerEntry_t* tail;$/;"	m	struct:peer_peertable
+tail	p2p/downloadList.h	/^    DLLEntry* tail;$/;"	m	struct:DLL
+tail	p2p/p2p.h	/^    downloadEntry_t* tail;                  \/\/ tail of the linked list of download entries$/;"	m	struct:peer_downloadTable
+tail	p2p/p2p.h	/^  downloadPiece_t* tail;              \/\/ the tail of the piece linked list$/;"	m	struct:downloadEntry
+tail	peer/file_monitor.h	/^	struct fileBlockEntry* tail;$/;"	m	struct:__anon4	typeref:struct:__anon4::fileBlockEntry
+tail	peer/peer_helpers.h	/^    downloadEntry_t* tail;                  \/\/ tail of the linked list of download entries$/;"	m	struct:peer_downloadTable
+tail	peer/peer_helpers.h	/^  downloadPiece_t* tail;              \/\/ the tail of the piece linked list$/;"	m	struct:downloadEntry
+test_filetable_AddIp2Iplist	TestFolder/filetable_test.c	/^void test_filetable_AddIp2Iplist() {$/;"	f
+test_filetable_appendFileEntry	TestFolder/filetable_test.c	/^void test_filetable_appendFileEntry() {$/;"	f
+test_filetable_deleteFileEntryByName	TestFolder/filetable_test.c	/^void test_filetable_deleteFileEntryByName(){$/;"	f
+test_filetable_deleteIpfromAllEntries	TestFolder/filetable_test.c	/^void test_filetable_deleteIpfromAllEntries(){$/;"	f
+test_filetable_deleteIpfromIplist	TestFolder/filetable_test.c	/^void test_filetable_deleteIpfromIplist() {$/;"	f
+test_filetable_init	TestFolder/filetable_test.c	/^void test_filetable_init() {$/;"	f
+test_filetable_searchFileByName	TestFolder/filetable_test.c	/^void test_filetable_searchFileByName() {$/;"	f
+test_filetable_searchFileByNameWithoutMutex	TestFolder/filetable_test.c	/^void test_filetable_searchFileByNameWithoutMutex() {$/;"	f
+test_filetable_updateFile	TestFolder/filetable_test.c	/^void test_filetable_updateFile() {$/;"	f
+test_peertable_addEntry	TestFolder/peertable_test.c	/^void test_peertable_addEntry() {$/;"	f
+test_peertable_createEntry	TestFolder/peertable_test.c	/^void test_peertable_createEntry() {$/;"	f
+test_peertable_deleteEntryByIp	TestFolder/peertable_test.c	/^void test_peertable_deleteEntryByIp() {$/;"	f
+test_peertable_init	TestFolder/peertable_test.c	/^void test_peertable_init() {$/;"	f
+test_peertable_refreshTimestamp	TestFolder/peertable_test.c	/^void test_peertable_refreshTimestamp() {$/;"	f
+test_peertable_searchEntryByIp	TestFolder/peertable_test.c	/^void test_peertable_searchEntryByIp() {$/;"	f
+timestamp	common/filetable.h	/^ unsigned long int timestamp;       \/\/the timestamp when the file is modified or created$/;"	m	struct:fileEntry
+timestamp	common/peertable.h	/^    unsigned long timestamp;       \/\/peer:     TODO: not sure ? $/;"	m	struct:peerEntry
+timestamp	p2p/p2p.h	/^  int timestamp;                      \/\/ the timestamp the download entry should based on tracker$/;"	m	struct:downloadEntry
+timestamp	peer/peer_helpers.h	/^  int timestamp;                      \/\/ the timestamp the download entry should based on tracker$/;"	m	struct:downloadEntry
+timestamp	testing/recursivelyDir.c	/^ unsigned long int timestamp;$/;"	m	struct:fileEntry	file:
+trackerStop	tracker/tracker.c	/^void trackerStop() {$/;"	f
+tracker_connection	peer/peer.c	/^int tracker_connection;     \/\/ socket connection between peer and tracker so can send \/ receive between the two$/;"	v
+tracker_listening	peer/peer.c	/^void* tracker_listening(void* arg) {$/;"	f
+type	common/pkt.h	/^	int type;						              \/\/ type of segment being sent$/;"	m	struct:segment_peer
+type	fileMonitor/fileMonitor.h	/^  mode_t type;				\/\/file type$/;"	m	struct:__anon1
+unblockFileAddListening	fileMonitor/fileMonitor.c	/^int unblockFileAddListening(char* filename) {$/;"	f
+unblockFileDeleteListening	fileMonitor/fileMonitor.c	/^int unblockFileDeleteListening(char* filename) {$/;"	f
+unblockFileWriteListening	fileMonitor/fileMonitor.c	/^int unblockFileWriteListening(char* filename) {$/;"	f
+utils_getIPfromHostName	common/utils.c	/^int utils_getIPfromHostName(char* hostname, char *ip) {$/;"	f
+validatePath	fileMonitor/fileMonitor.c	/^char* validatePath(char* filename) {$/;"	f
