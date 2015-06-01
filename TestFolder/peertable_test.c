@@ -242,7 +242,7 @@ void test_peertable_refreshTimestamp() {
   peerEntry_t* peer = peertable -> head;
   sleep(1);
 
-  unsigned long timestamp = peer -> timestamp;
+  unsigned int timestamp = peer -> timestamp;
 
   assert(peertable_refreshTimestamp(peer) == 1);
   assert(timestamp != peer -> timestamp);

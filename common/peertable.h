@@ -14,7 +14,7 @@ typedef struct peerEntry {
                                        // trakcer: dont care
     
     //Timestamp of current downloading file.
-    unsigned long timestamp;       //peer:     TODO: not sure ? 
+    unsigned int timestamp;       //peer:     TODO: not sure ? 
                                     //tracker:  latest alive timestamp of this peer
     //TCP connection to this remote peer.
     int sockfd;

@@ -233,7 +233,7 @@ void* monitorAlive(void* arg){
 			peerEntry_t* iter = myPeerTablePtr->head;
 
 			//obtain current Time
-			unsigned long currentTime = getCurrentTime();
+			unsigned int currentTime = getCurrentTime();
 			while(iter != NULL) {
 			//loop through peerTable
 			//check each peer if dead or alive

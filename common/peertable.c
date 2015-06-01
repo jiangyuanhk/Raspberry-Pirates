@@ -243,7 +243,7 @@ void peertable_printPeerTable(peerTable_t* peertable) {
  */
 int peertable_refreshTimestamp(peerEntry_t* entry){
     
-  unsigned long curTime = getCurrentTime();
+  unsigned int curTime = getCurrentTime();
 
   //if the entries time stamp is greater than the current time, return -1 
   if(entry -> timestamp > curTime) return -1;

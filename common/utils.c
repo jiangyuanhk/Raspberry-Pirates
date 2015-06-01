@@ -43,10 +43,10 @@ int utils_getIPfromHostName(char* hostname, char *ip) {
     return -1;
 }
 
-unsigned long getCurrentTime(){
+unsigned int getCurrentTime(){
 	time_t curTime;
     curTime = time((time_t *)0);
-    return (unsigned long) curTime;
+    return (unsigned int) curTime;
 }
 
 // Function that gets the ip address for the local machine and saves it in the char * passed as a parameter.

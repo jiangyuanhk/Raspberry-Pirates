@@ -42,7 +42,7 @@ void fill_filetable(fileTable_t* filetable, char *dir, char* prefix, int depth) 
           sprintf(path, "%s/%s/", prefix, entry -> d_name);
           
           //add the entry to the file table
-          fileEntry_t* file_entry= filetable_createFileEntry(path, 0, (unsigned long int) statbuf.st_mtime, DIRECTORY);
+          fileEntry_t* file_entry= filetable_createFileEntry(path, 0, (unsigned int) statbuf.st_mtime, DIRECTORY);
           filetable_appendFileEntry(filetable, file_entry);
           free(path);
 
@@ -64,7 +64,7 @@ void fill_filetable(fileTable_t* filetable, char *dir, char* prefix, int depth) 
         sprintf(path, "%s/%s", prefix, entry -> d_name);
         
         //add the entry to the file table
-        fileEntry_t* file_entry= filetable_createFileEntry(path, statbuf.st_size, (unsigned long int) statbuf.st_mtime, REGULAR_FILE);
+        fileEntry_t* file_entry= filetable_createFileEntry(path, statbuf.st_size, (unsigned int) statbuf.st_mtime, REGULAR_FILE);
         filetable_appendFileEntry(filetable, file_entry);
         free(path);
       }

@@ -15,7 +15,7 @@ typedef struct fileEntry{
 
  int size;                          //the size of the file
  char file_name[FILE_NAME_MAX_LEN]; //the name of the file, must be unique in the same directory
- unsigned long int timestamp;       //the timestamp when the file is modified or created
+ unsigned int timestamp;       //the timestamp when the file is modified or created
  struct fileEntry* next;            //pointer to build the linked list
  char iplist[MAX_NUM_PEERS][IP_LEN]; //tracker:  this is a list of peers' ips posessing the file
                                     //peer:     only contains ip of peer itself, put it in iplist[0]

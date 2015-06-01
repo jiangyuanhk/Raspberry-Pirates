@@ -50,7 +50,7 @@ fileTable_t* filetable_init() {
 /*
   Function to initialize a file entry.
 */
-fileEntry_t * filetable_createFileEntry(char* filepath, int size, unsigned long int timestamp, int type){
+fileEntry_t * filetable_createFileEntry(char* filepath, int size, unsigned int timestamp, int type){
   fileEntry_t* entry = calloc(1, sizeof(fileEntry_t));
   entry -> next = NULL;
   entry -> peerNum = 0;
@@ -267,7 +267,7 @@ int filetable_updateFile(fileEntry_t* oldEntryPtr, fileEntry_t* newEntryPtr, pth
 	pthread_mutex_lock(tablemutex);
 	printf("Old size: %d\n",oldEntryPtr->size);
 	memcpy(&(oldEntryPtr->size), &(newEntryPtr->size), sizeof(int));
-	memcpy(&(oldEntryPtr->timestamp), &(newEntryPtr->timestamp), sizeof(unsigned long int));
+	memcpy(&(oldEntryPtr->timestamp), &(newEntryPtr->timestamp), sizeof(unsigned int));
 	printf("New size: %d\n",oldEntryPtr->size);
 	pthread_mutex_unlock(tablemutex);
 	return 1;
@@ -405,35 +405,63 @@ void filetable_destroy(fileTable_t *tablePtr){
 	return;
 }	
 
+
+
+
 /******************** ARRAY <==========> LINKEDLIST CONVERSION ******************/
 
 /**
  * conver linkedlist of entries of in the table into continous chunk of array, for ease of sending
  * need to pass tablePtr because we want the tablesize and head/tail information together
- * @param  entry 	[head pointer of linked list of fileEntries in the table]
+ * @param  entry    [head pointer of linked list of fileEntries in the table]
  * @num             [number of file entries in the linked list]
  * @tablemutex      [the mutex lock for the filetable]
  * @return          [array chunk]
  */
 char* filetable_convertFileEntriesToArray(fileEntry_t* entry, int num, pthread_mutex_t* tablemutex){
-	
-	pthread_mutex_lock(tablemutex);
-	//initialize the array
-	char* buf = malloc(num * sizeof(fileEntry_t));
+    
+    pthread_mutex_lock(tablemutex);
+    //read-write for 32-bit / 64 bit compability
+    
+    printf("%s: first make sure the size of pointer in 64 is: %d\n", __func__, (int)sizeof(fileEntry_t*));
 
-  memset(buf, 0, num * sizeof(fileEntry_t));
-	fileEntry_t* iter = entry;
-	int i = 0;
-	while(iter != NULL){
-		//each time, copy size of fileEntry_t from iter to the array indentified by arrayHead
-		memcpy(&buf[i * sizeof(fileEntry_t)], iter, sizeof(fileEntry_t));
-		//go to next entry
-		iter = iter-> next;
-		i++;
-	}
-	pthread_mutex_unlock(tablemutex);
-	return buf;
+    int bytesOfSingleEntry = sizeof(int) + sizeof(char) * FILE_NAME_MAX_LEN + sizeof(unsigned int) + sizeof(char) * MAX_NUM_PEERS * IP_LEN + sizeof(int) + sizeof(int);
+    
+    printf("%s: single byte used %d bytes\n", __func__, bytesOfSingleEntry);
+
+    int totalBytes = num * bytesOfSingleEntry;
+
+    char* buf = malloc(totalBytes);
+    memset(buf, 0, totalBytes);
+
+    fileEntry_t* iter = entry;
+    int i = 0;
+    while(iter != NULL){
+        //for each entry, copy ONLY each valid filed into the array accordingly
+        
+        memcpy(buf + i, &(iter->size), sizeof(int));
+        i += sizeof(int);
+        memcpy(buf + i, iter->file_name, sizeof(char) * FILE_NAME_MAX_LEN);
+        i += sizeof(char) * FILE_NAME_MAX_LEN;
+        memcpy(buf + i, &(iter->timestamp), sizeof(unsigned int));
+        i += sizeof(unsigned int);
+        memcpy(buf + i, iter->iplist, sizeof(char) * MAX_NUM_PEERS * IP_LEN);
+        i += sizeof(char) * MAX_NUM_PEERS * IP_LEN;
+        memcpy(buf + i, &(iter->peerNum), sizeof(int));
+        i += sizeof(int);
+        memcpy(buf + i, &(iter->file_type), sizeof(int));
+        i += sizeof(int);
+
+        iter = iter->next;
+        
+    }
+
+    pthread_mutex_unlock(tablemutex);
+    return buf;
+
 }
+
+
 
 /**
  * convert received buffer back to a list of fileEntries struct
@@ -444,28 +472,63 @@ char* filetable_convertFileEntriesToArray(fileEntry_t* entry, int num, pthread_m
  */
 fileEntry_t* filetable_convertArrayToFileEntires(char* buf, int num){
 
-  if (num < 1) return NULL;
+    if (num < 1) return NULL;
 
-	//create and read in the head of the list first
-	fileEntry_t* head = (fileEntry_t*) malloc(sizeof(fileEntry_t));
-  memcpy(head, buf, sizeof(fileEntry_t));
-  head -> next = NULL;
+    //create and read in the head of the list first
 
-  //read in the rest of the entries, adding them to the SLL with the head at the start
-  fileEntry_t* prev = head;
-  fileEntry_t* curr;
 
-	int i;
-	for(i = 1; i < num; i++) {
-		curr = malloc(sizeof(fileEntry_t));
-		memcpy(curr, buf + i * sizeof(fileEntry_t), sizeof(fileEntry_t));
-    curr -> next = NULL;
-    prev -> next = curr;
-    prev = curr;
-	}
+    fileEntry_t* head = (fileEntry_t*) malloc(sizeof(fileEntry_t));
+    head->next = NULL;
+    int i = 0;
+    memcpy(&(head->size), buf + i, sizeof(int));
+    i += sizeof(int);
+    memcpy(head->file_name, buf + i,sizeof(char) * FILE_NAME_MAX_LEN);
+    i += sizeof(char) * FILE_NAME_MAX_LEN;
+    memcpy(&(head->timestamp), buf + i,sizeof(unsigned int));
+    i += sizeof(unsigned int);
+    memcpy(head->iplist, buf + i, sizeof(char) * MAX_NUM_PEERS * IP_LEN);
+    i += sizeof(char) * MAX_NUM_PEERS * IP_LEN;
+    memcpy(&(head->peerNum), buf + i, sizeof(int));
+    i += sizeof(int);
+    memcpy(&(head->file_type), buf + i, sizeof(int));
+    i += sizeof(int);
 
-	return head;
+
+
+    //read in the rest of the entries, adding them to the SLL with the head at the start
+    fileEntry_t* prev = head;
+    fileEntry_t* curr;
+    int j;
+    for(j = 1; j < num; j++) {
+        curr = malloc(sizeof(fileEntry_t));
+        
+        
+        memcpy(&(curr->size), buf + i, sizeof(int));
+        i += sizeof(int);
+        memcpy(curr->file_name, buf + i,sizeof(char) * FILE_NAME_MAX_LEN);
+        i += sizeof(char) * FILE_NAME_MAX_LEN;
+        memcpy(&(curr->timestamp), buf + i,sizeof(unsigned int));
+        i += sizeof(unsigned int);
+        memcpy(curr->iplist, buf + i, sizeof(char) * MAX_NUM_PEERS * IP_LEN);
+        i += sizeof(char) * MAX_NUM_PEERS * IP_LEN;
+        memcpy(&(curr->peerNum), buf + i, sizeof(int));
+        i += sizeof(int);
+        memcpy(&(curr->file_type), buf + i, sizeof(int));
+        i += sizeof(int);
+
+        curr -> next = NULL;
+        prev -> next = curr;
+        prev = curr;
+    }
+
+    return head;
 }
+
+
+
+
+
+
 
 /**
  * Convert entries into a file table.

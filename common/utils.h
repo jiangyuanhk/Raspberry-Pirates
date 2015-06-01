@@ -2,7 +2,7 @@
 #define UTILS_H
 
 
-unsigned long int getCurrentTime(); 
+unsigned int getCurrentTime(); 
 
 int utils_getIPfromHostName(char* hostname, char *ip);
 

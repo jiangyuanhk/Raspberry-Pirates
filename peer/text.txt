@@ -120,10 +120,10 @@ int svr_sd;
 // void* monitorAlive(void* arg){
 //  while(1){
 //    sleep(MINITOR_ALIVE_INTERVAL);
-//    unsigned long curTime = getCurrentTime();
+//    unsigned int curTime = getCurrentTime();
 //    //compare current time with each file's last_time_stamp
 //    //if the difference larger than timeout value, delete the corresponding entry
-//    // deleteDeadPeers(unsigned long curTime);//TODO
+//    // deleteDeadPeers(unsigned int curTime);//TODO
 //  }
 // }
 
@@ -392,10 +392,10 @@ int svr_sd;
 // void* monitorAlive(void* arg){
 //  while(1){
 //    sleep(MINITOR_ALIVE_INTERVAL);
-//    unsigned long curTime = getCurrentTime();
+//    unsigned int curTime = getCurrentTime();
 //    //compare current time with each file's last_time_stamp
 //    //if the difference larger than timeout value, delete the corresponding entry
-//    // deleteDeadPeers(unsigned long curTime);//TODO
+//    // deleteDeadPeers(unsigned int curTime);//TODO
 //  }
 // }
 
@@ -664,10 +664,10 @@ int svr_sd;
 // void* monitorAlive(void* arg){
 //  while(1){
 //    sleep(MINITOR_ALIVE_INTERVAL);
-//    unsigned long curTime = getCurrentTime();
+//    unsigned int curTime = getCurrentTime();
 //    //compare current time with each file's last_time_stamp
 //    //if the difference larger than timeout value, delete the corresponding entry
-//    // deleteDeadPeers(unsigned long curTime);//TODO
+//    // deleteDeadPeers(unsigned int curTime);//TODO
 //  }
 // }
 
@@ -936,10 +936,10 @@ int svr_sd;
 // void* monitorAlive(void* arg){
 //  while(1){
 //    sleep(MINITOR_ALIVE_INTERVAL);
-//    unsigned long curTime = getCurrentTime();
+//    unsigned int curTime = getCurrentTime();
 //    //compare current time with each file's last_time_stamp
 //    //if the difference larger than timeout value, delete the corresponding entry
-//    // deleteDeadPeers(unsigned long curTime);//TODO
+//    // deleteDeadPeers(unsigned int curTime);//TODO
 //  }
 // }
 
@@ -1208,10 +1208,10 @@ int svr_sd;
 // void* monitorAlive(void* arg){
 //  while(1){
 //    sleep(MINITOR_ALIVE_INTERVAL);
-//    unsigned long curTime = getCurrentTime();
+//    unsigned int curTime = getCurrentTime();
 //    //compare current time with each file's last_time_stamp
 //    //if the difference larger than timeout value, delete the corresponding entry
-//    // deleteDeadPeers(unsigned long curTime);//TODO
+//    // deleteDeadPeers(unsigned int curTime);//TODO
 //  }
 // }
 
@@ -1480,10 +1480,10 @@ int svr_sd;
 // void* monitorAlive(void* arg){
 //  while(1){
 //    sleep(MINITOR_ALIVE_INTERVAL);
-//    unsigned long curTime = getCurrentTime();
+//    unsigned int curTime = getCurrentTime();
 //    //compare current time with each file's last_time_stamp
 //    //if the difference larger than timeout value, delete the corresponding entry
-//    // deleteDeadPeers(unsigned long curTime);//TODO
+//    // deleteDeadPeers(unsigned int curTime);//TODO
 //  }
 // }
 
@@ -1752,10 +1752,10 @@ int svr_sd;
 // void* monitorAlive(void* arg){
 //  while(1){
 //    sleep(MINITOR_ALIVE_INTERVAL);
-//    unsigned long curTime = getCurrentTime();
+//    unsigned int curTime = getCurrentTime();
 //    //compare current time with each file's last_time_stamp
 //    //if the difference larger than timeout value, delete the corresponding entry
-//    // deleteDeadPeers(unsigned long curTime);//TODO
+//    // deleteDeadPeers(unsigned int curTime);//TODO
 //  }
 // }
 
@@ -2024,10 +2024,10 @@ int svr_sd;
 // void* monitorAlive(void* arg){
 //  while(1){
 //    sleep(MINITOR_ALIVE_INTERVAL);
-//    unsigned long curTime = getCurrentTime();
+//    unsigned int curTime = getCurrentTime();
 //    //compare current time with each file's last_time_stamp
 //    //if the difference larger than timeout value, delete the corresponding entry
-//    // deleteDeadPeers(unsigned long curTime);//TODO
+//    // deleteDeadPeers(unsigned int curTime);//TODO
 //  }
 // }
 
@@ -2296,10 +2296,10 @@ int svr_sd;
 // void* monitorAlive(void* arg){
 //  while(1){
 //    sleep(MINITOR_ALIVE_INTERVAL);
-//    unsigned long curTime = getCurrentTime();
+//    unsigned int curTime = getCurrentTime();
 //    //compare current time with each file's last_time_stamp
 //    //if the difference larger than timeout value, delete the corresponding entry
-//    // deleteDeadPeers(unsigned long curTime);//TODO
+//    // deleteDeadPeers(unsigned int curTime);//TODO
 //  }
 // }
 

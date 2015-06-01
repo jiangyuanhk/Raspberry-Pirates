@@ -72,7 +72,7 @@ typedef struct fileEntry{
  //the name of the file, must be unique in the same directory
  char *name;
  //the timestamp when the file is modified or created
- unsigned long int timestamp;
+ unsigned int timestamp;
  //pointer to build the linked list
  struct fileEntry *pNext;
 

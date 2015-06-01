@@ -10,7 +10,7 @@ typedef struct {
   char* filepath;			//path of the file
   int size;					//size of the file
   mode_t type;				//file type
-  unsigned long int lastModifyTime; //time stamp
+  unsigned int lastModifyTime; //time stamp
 } FileInfo;
 
 typedef struct {
