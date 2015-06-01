@@ -31,6 +31,10 @@ void printChange() {
 	printf("Change detected in file system\n");
 }
 
+void printSync() {
+	printf("Sync called \n");
+}
+
 
 
 int main(int argc, char *argv[]) {
@@ -39,11 +43,14 @@ int main(int argc, char *argv[]) {
 	void (*Modify)(char *);
 	void (*Delete)(char *);
 	void (*filesChanged)(void);
+	void (*filesSync)(void);
 
 	Add = &printAdd;
 	Modify = &printModify;
 	Delete = &printDelete;
+	filesSync = &printSync;
 	filesChanged = &printChange;
+	
 
 	/*Add = (void *)printAdd;
 	Modify = (void *)printModify;
@@ -53,6 +60,7 @@ localFileAlerts myFuncs = {
 	Add,
 	Modify,
 	Delete,
+	filesSync,
 	filesChanged
 };
 
@@ -80,6 +88,8 @@ printf("File Blocked will be ignored if deleted for 15 seconds\n");
 sleep(15);
 
 unblockFileDeleteListening("./testing/Blocked");
+
+sleep(30);
 
 FileMonitor_close();
 
