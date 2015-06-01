@@ -492,7 +492,6 @@ void* keep_alive(void* arg) {
     pkt_peer_sendPkt(tracker_connection, pkt, NULL);
     sleep(heartbeat_interval);
   }
-  free(ip_address);
   free(pkt);
   pthread_exit(NULL);
 }
