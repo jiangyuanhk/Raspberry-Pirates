@@ -434,7 +434,7 @@ void* p2p_download_file(void* arg) {
   //remove this from the peer table so know that the download is completed
   printf("Remove the entry for file %s from the downloadtable\n", file -> file_name);
   remove_entry_from_downloadtable(downloadtable, file -> file_name);
-  printf("Closing donwload file thread. \n");
+  printf("Closing download file thread. \n");
   // if (file) free(file);
 
   pthread_exit(NULL);
