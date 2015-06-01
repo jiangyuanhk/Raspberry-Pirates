@@ -492,6 +492,7 @@ void* keep_alive(void* arg) {
     pkt_peer_sendPkt(tracker_connection, pkt, NULL);
     sleep(heartbeat_interval);
   }
+  free(ip_address);
   free(pkt);
   pthread_exit(NULL);
 }
@@ -714,8 +715,8 @@ int main(int argc, char *argv[]) {
 
 
   //Start the keep alive thread
-  // pthread_t keep_alive_thread;
-  // pthread_create(&keep_alive_thread, NULL, keep_alive, NULL);
+  pthread_t keep_alive_thread;
+  pthread_create(&keep_alive_thread, NULL, keep_alive, NULL);
   
 
   //--------------------File Monitor Thread-------------------------

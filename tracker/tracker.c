@@ -392,10 +392,10 @@ int initial_sync_with_peer(int conn) {
  	 }
    printf("successfully created socket to wait for handshakes.\n");
 
-	// //3. start a thread to minitor & accept alive message from online peers periodically
-	// //remove dead peers if timeout occurs
- // 	pthread_t monitorAlive_thread;
- // 	pthread_create(&monitorAlive_thread, NULL, monitorAlive, NULL);
+	//3. start a thread to minitor & accept alive message from online peers periodically
+	//remove dead peers if timeout occurs
+ 	pthread_t monitorAlive_thread;
+ 	pthread_create(&monitorAlive_thread, NULL, monitorAlive, NULL);
 
 
  	//4. register cleanup method when stop
