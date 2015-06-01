@@ -708,6 +708,7 @@ void Blocklist_print() {
 	pthread_mutex_lock(&blockList_mutex);
 	FileBlockList* curr = blockList;
 	while(curr) {
+		printf("\t%s | %d\n", curr->filepath, curr->event);
 		curr = curr->next;
 	}
 	printf("End of blocklist\n");
