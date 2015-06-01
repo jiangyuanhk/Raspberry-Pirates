@@ -223,7 +223,6 @@ int recombine_temp_files(char* filepath, int num_pieces) {
     //if there is an error opening the piece, return -1
     if (temp_file == NULL) {
       printf("Error opening temp file to write to.\n");
-      fclose(temp_file);
       fclose(main_file);
       return -1;
     }
