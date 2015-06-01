@@ -432,19 +432,34 @@ downloadEntry_t* search_downloadtable_for_entry(downloadTable_t* downloadtable, 
 
 int remove_entry_from_downloadtable(downloadTable_t* downloadtable, char* filename){
   pthread_mutex_lock(downloadtable -> mutex);
-  downloadEntry_t* dummy = (downloadEntry_t*) malloc(sizeof(downloadEntry_t));
-  dummy->next = downloadtable->head;
 
-  downloadEntry_t* iter = dummy;
-  while(iter -> next) {
-    if(strcmp(iter -> next -> file_name, filename) == 0) {
-      downloadEntry_t* tobeDeleted = iter->next;
-      iter->next = iter->next->next;
-      free(tobeDeleted);
+  if (downloadtable -> size == 0) return -1;
+
+  if (downloadtable -> size == 1) {
+    free(downloadtable -> head);
+    downloadtable -> head = NULL;
+    downloadtable -> tail = NULL;
+    downloadtable -> size--;
+    pthread_mutex_unlock(downloadtable -> mutex);
+    return 1;
+  }
+
+  downloadEntry_t* prev =  downloadtable -> head;
+  downloadEntry_t* curr =  prev -> next;
+  
+  while (curr) {
+    
+    //if it matches, delete and free it from the list
+    if( strcmp(curr -> file_name, filename) == 0) {
+      prev -> next = curr -> next;
+      free(curr);
+      downloadtable -> size--;
       pthread_mutex_unlock(downloadtable -> mutex);
       return 1;
     }
-    iter = iter -> next;
+
+    prev = curr;
+    curr = curr -> next;
   }
 
   pthread_mutex_unlock(downloadtable -> mutex);
