@@ -164,7 +164,7 @@ void* tracker_listening(void* arg) {
       }
 
       //download the file the file if it outdated (UPDATE)
-      else if ( (file -> timestamp) > (local_file -> timestamp) ) { 
+      else if ( (file -> timestamp) > (local_file -> timestamp) && !S_ISDIR(file -> file_type)) { 
         printf("File updated or added.  Need to download file: %s\n", file -> file_name);
         // pthread_mutex_lock(&blockList_mutex);
         blockFileWriteListening(file -> file_name);
@@ -598,8 +598,8 @@ void Filetable_peerSync() {
     if(local_file == NULL) {
       // pthread_mutex_lock(&blockList_mutex);
       blockFileAddListening(file -> file_name);
-      if(S_ISDIR(local_file -> file_type)) {
-          mkdir(local_file -> file_name, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+      if(S_ISDIR(file -> file_type)) {
+          mkdir(file -> file_name, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
           //add the directory to the local filetable
           fileEntry_t* new_folder = FileEntry_create(local_file -> file_name);
           filetable_appendFileEntry(filetable, new_folder);
@@ -613,7 +613,7 @@ void Filetable_peerSync() {
     }
 
     //download the file the file if it outdated (UPDATE)
-    else if ( (file -> timestamp) > (local_file -> timestamp) ) { 
+    else if ( (file -> timestamp) > (local_file -> timestamp) && !S_ISDIR(file -> file_type)) {
       printf("File updated or added.  Need to download file: %s\n", file -> file_name);
       // pthread_mutex_lock(&blockList_mutex);
       blockFileWriteListening(file -> file_name);
