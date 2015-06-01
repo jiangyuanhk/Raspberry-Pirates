@@ -156,6 +156,8 @@ void* tracker_listening(void* arg) {
             fileEntry_t* new_folder = FileEntry_create(file -> file_name);
             filetable_appendFileEntry(filetable, new_folder);
             printf("Directory created: %s\n", file -> file_name);
+            sleep(MONITOR_POLL_INTERVAL);
+            unblockFileAddListening(file -> file_name);
         }
 
         else {
