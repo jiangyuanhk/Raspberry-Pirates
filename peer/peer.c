@@ -44,6 +44,7 @@ int noSIGINT = 1;
 char* directory;
 fileTable_t* filetable;               //local file table to keep track of files in the directory
 downloadTable_t* downloadtable;      //peer table to keep track of ongoing downloading tasks
+pthread_mutex_t* blockList_mutex;     //block list mutex
 
 //Function to connect the peer to the tracker on the HANDSHAKE Port.
 // Returns -1 if it failed to connect.  Otherwise, returns the sockfd
@@ -115,6 +116,7 @@ void* delete_timer(void* arg) {
   char* filepath = (char*) arg;
   sleep(MONITOR_POLL_INTERVAL);
   unblockFileDeleteListening(filepath);
+  pthread_mutex_unlock(blockList_mutex);
   pthread_exit(NULL);
 }
 
@@ -143,7 +145,7 @@ void* tracker_listening(void* arg) {
       
       // download the updated file if the local file does not exist (ADD)
       if(local_file == NULL) {
-        
+        pthread_mutex_lock(blockList_mutex);
         blockFileAddListening(file -> file_name);
         if(S_ISDIR(file -> file_type)) {
             mkdir(file -> file_name, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -162,6 +164,7 @@ void* tracker_listening(void* arg) {
       //download the file the file if it outdated (UPDATE)
       else if ( (file -> timestamp) > (local_file -> timestamp) ) { 
         printf("File updated or added.  Need to download file: %s\n", file -> file_name);
+        pthread_mutex_lock(blockList_mutex);
         blockFileWriteListening(file -> file_name);
         
         //make sure that the file is not already being downloaded and if not, add to the peer table
@@ -188,7 +191,7 @@ void* tracker_listening(void* arg) {
 
       //if the file is not in the master file table and is locally, then delete it
       if (master_file == NULL) {
-
+        pthread_mutex_lock(blockList_mutex);
         blockFileDeleteListening(file -> file_name);
 
         memcpy(delete_filepath, file -> file_name, strlen(file -> file_name));
@@ -402,6 +405,7 @@ void* p2p_download_file(void* arg) {
     free(file);
     sleep(MONITOR_POLL_INTERVAL);
     unblockFileWriteListening(entry -> file_name);
+    pthread_mutex_unlock(blockList_mutex);
   }
 
   else {
@@ -410,6 +414,7 @@ void* p2p_download_file(void* arg) {
     filetable_appendFileEntry(filetable, new_file);
     sleep(MONITOR_POLL_INTERVAL);
     unblockFileAddListening(entry -> file_name);
+    pthread_mutex_unlock(blockList_mutex);
   }
 
 //   //TODO
@@ -589,7 +594,7 @@ void Filetable_peerSync() {
       
     // download the updated file if the local file does not exist (ADD)
     if(local_file == NULL) {
-        
+      pthread_mutex_lock(blockList_mutex);
       blockFileAddListening(file -> file_name);
       if(S_ISDIR(local_file -> file_type)) {
           mkdir(local_file -> file_name, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -608,6 +613,7 @@ void Filetable_peerSync() {
     //download the file the file if it outdated (UPDATE)
     else if ( (file -> timestamp) > (local_file -> timestamp) ) { 
       printf("File updated or added.  Need to download file: %s\n", file -> file_name);
+      pthread_mutex_lock(blockList_mutex);
       blockFileWriteListening(file -> file_name);
         
       //make sure that the file is not already being downloaded and if not, add to the peer table
@@ -716,6 +722,9 @@ int main(int argc, char *argv[]) {
     Sync,
     SendUpdate
   };
+
+  pthread_mutex_t* blockList_mutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
+  pthread_mutex_init(blockList_mutex, NULL);
 
 
   pthread_t monitorthread;
