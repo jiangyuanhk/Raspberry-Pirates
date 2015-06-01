@@ -356,7 +356,6 @@ void* p2p_download_file(void* arg) {
 
   fileEntry_t* file = (fileEntry_t*) arg;
 
-
   downloadEntry_t* entry = init_downloadEntry(file, piece_len);
   add_entry_to_downloadtable(downloadtable, entry);
   printf("Add File to Download Table: %s\n", file -> file_name);
@@ -390,21 +389,19 @@ void* p2p_download_file(void* arg) {
   utime(entry -> file_name, newTime);
   printf("Updated file time. \n");
 
-  //add the file to the local filetable
-  fileEntry_t* new_file = FileEntry_create(entry -> file_name);
-  filetable_appendFileEntry(filetable, new_file);
-
   fileEntry_t* old_entry = filetable_searchFileByName(filetable, entry -> file_name);
 
   //if the old entry exists, it is a modfy so update
   if (old_entry) {
-    filetable_updateFile(old_entry, new_file, filetable -> filetable_mutex);
-    free(new_file);
+    filetable_updateFile(old_entry, file, filetable -> filetable_mutex);
+    free(file);
     sleep(MONITOR_POLL_INTERVAL);
     unblockFileWriteListening(entry -> file_name);
   }
 
   else {
+    //add the file to the local filetable
+    fileEntry_t* new_file = FileEntry_create(entry -> file_name);
     filetable_appendFileEntry(filetable, new_file);
     sleep(MONITOR_POLL_INTERVAL);
     unblockFileAddListening(entry -> file_name);
@@ -414,7 +411,6 @@ void* p2p_download_file(void* arg) {
 //   //handshake with the tracker
 //   //send the filetable so that I can be added to the iplist[0]
 
-
   //remove this from the peer table so know that the download is completed
   remove_entry_from_downloadtable(downloadtable, file -> file_name);
 
@@ -423,6 +419,8 @@ void* p2p_download_file(void* arg) {
 
 void* p2p_upload(void* arg) {
   int peer_conn = *(int*) arg;
+
+  printf("Begin upload.\n");
   
   while(1) {
     //get the filename of the file to send  
@@ -436,6 +434,7 @@ void* p2p_upload(void* arg) {
 
     //if the filename is not there, done uploading.
     if (strlen(recv_metadata -> filename) == 0) {
+      printf("Error receiving metadata for the file\n");
       free(recv_metadata);
       pthread_exit(NULL);
     }
@@ -454,6 +453,7 @@ void* p2p_upload(void* arg) {
     free(recv_metadata);
   }
   
+  printf("End upload.\n");
   pthread_exit(NULL);
 }
 
@@ -605,7 +605,7 @@ void Filetable_peerSync() {
       printf("File updated or added.  Need to download file: %s\n", file -> file_name);
       blockFileWriteListening(file -> file_name);
         
-      //TODO make sure that the file is not already being downloaded and if not, add to the peer table
+      //make sure that the file is not already being downloaded and if not, add to the peer table
       pthread_t p2p_download_file_thread;
       pthread_create(&p2p_download_file_thread, NULL, p2p_download_file, file);
     }

@@ -147,9 +147,17 @@ void *handshake(void* arg){
 					} 
 
           // if the filetable entry has an outdated timestamp, the file has been updated
-          // so need broadcast and update the file
+          // so need to broadcast and update the file
           else if( (iter->timestamp) > (entry -> timestamp) ) {
             filetable_updateFile(entry, iter, myFileTablePtr->filetable_mutex);
+            
+            //remove all of the ips in the list and add the updated entry ip to the list
+            int i;
+            for( i = 0; i < entry -> peerNum; i++) {
+              memset(entry -> iplist[i], 0, IP_LEN);
+            }
+
+            filetable_AddIp2Iplist(entry, pkt_recv.peer_ip, myFileTablePtr->filetable_mutex);
             needBroadCast = 1;
           }
 
@@ -211,9 +219,6 @@ void *handshake(void* arg){
 }
 
 
-
-
-
 /**
  * Periodically check if some peer is dead (DEAD_PEER_TIMEOUT)
  * remove dead peer from peerTable, remove peerip from fileTable
@@ -232,7 +237,7 @@ void* monitorAlive(void* arg){
 			while(iter != NULL){
 			//loop through peerTable
 			//check each peer if dead or alive
-				if(currentTime - iter->timestamp > DEAD_PEER_TIMEOUT){
+				if(currentTime - iter->timestamp > DEAD_PEER_TIMEOUT) {
 					//if dead, delete this peer from table
 					peertable_deleteEntryByIp(myPeerTablePtr, iter->ip);
 					//if dead, also remove this peerip from any entry's iplist in the table
@@ -324,8 +329,16 @@ int initial_sync_with_peer(int conn) {
 
     // if the filetable entry has an outdated timestamp, the file has been updated
     // so need broadcast and update the file
-    else if( (iter->timestamp) < (entry -> timestamp) ) {
+    else if( (iter->timestamp) > (entry -> timestamp) ) {
       filetable_updateFile(entry, iter, myFileTablePtr->filetable_mutex);
+
+      //remove all of the ips in the list and add the updated entry ip to the list
+      int i;
+      for( i = 0; i < entry -> peerNum; i++) {
+        memset(entry -> iplist[i], 0, IP_LEN);
+      }
+
+      filetable_AddIp2Iplist(entry, pkt_recv.peer_ip, myFileTablePtr->filetable_mutex);
     }
 
     // if the timestamps are the same, the file is updated at the peer so add to ip list for file

@@ -11,6 +11,5 @@ peer: peer/peer.h fileMonitor/fileMonitor.o
 
 clean:
 	rm -rf fileMonitor/*.o
-	rm -rf client/app_simple_client
 	rm -rf app_tracker
 	rm -rf app_peer

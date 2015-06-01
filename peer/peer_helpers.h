@@ -24,7 +24,7 @@ typedef struct downloadEntry {
   int successful_pieces;              // the number of pieces succcesfully sent
   int size;                           // the size of the linked list of pieces
   struct downloadEntry *next;         // the next download entry in the download entry list
-  pthread_mutex_t* mutex;       // mutex for the linked list of pieces
+  pthread_mutex_t* mutex;             // mutex for the linked list of pieces
 } downloadEntry_t;
 
 typedef struct peer_downloadTable {
