@@ -175,4 +175,6 @@ int unblockFileDeleteListening(char* filename);
 */
 void FileInfo_table_print(FileInfo_table* toPrint);
 
+void Blocklist_print();
+
 #endif

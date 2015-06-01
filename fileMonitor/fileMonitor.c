@@ -65,6 +65,7 @@ void *fileMonitorThread(void* arg) {
 	while(running) {
 		//print table for testing
 		//FileInfo_table_print(ftable);
+		Blocklist_print();
 		//get the updated table
 		FileInfo_table* newtable = getAllFilesInfo();
 		//get a comparison and call the necessary functions
@@ -700,4 +701,15 @@ void FileInfo_table_print(FileInfo_table* toPrint) {
 		printf("\tFile Name: %s\t|\tFile Size: %d\n", toPrint->table[i].filepath, toPrint->table[i].size);
 	}
 	printf("\n\n");
+}
+
+void Blocklist_print() {
+	printf("The blocklist is as follows:\n");
+	pthread_mutex_lock(&blockList_mutex);
+	FileBlockList* curr = blockList;
+	while(curr) {
+		curr = curr->next;
+	}
+	printf("End of blocklist\n");
+	pthread_mutex_unlock(&blockList_mutex);
 }
