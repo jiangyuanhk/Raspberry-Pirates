@@ -704,6 +704,7 @@ void FileInfo_table_print(FileInfo_table* toPrint) {
 }
 
 void Blocklist_print() {
+	if(blockList == NULL) {
 		return;
 	}
 	printf("The blocklist is as follows:\n");
