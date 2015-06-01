@@ -65,7 +65,7 @@ void* p2p_download(void* arg) {
       
       // if sending the metadata failed, we cannot send the piece so readd the piece to the piece list
       if ( (metadata = send_meta_data_info(peer_conn, entry -> file_name, piece -> start, piece -> size, piece -> piece_num)) == NULL) {
-        printf("Readding the piece to the piece list.\n");
+        printf("Reading the piece to the piece list.\n");
         readd_piece_to_list(entry, piece);
         close(peer_conn);
         pthread_exit(NULL);
@@ -73,7 +73,7 @@ void* p2p_download(void* arg) {
 
       //if we fail receiving the data from the peer, re-add the piece to the folder
       if (receive_data_p2p(peer_conn, metadata) < 0) {
-        printf("Error receiving the data p2p.  Readding the piece to the folder.\n");
+        printf("Error receiving the data p2p.  Re-adding the piece to the folder.\n");
         readd_piece_to_list(entry, piece);
         free(metadata);
         close(peer_conn);
@@ -132,12 +132,12 @@ int recombine_temp_files(char* filepath, int num_pieces) {
       fwrite(buffer, 1, bytes, main_file);
     }
 
-    printf("Exitied the read through file loop\n");
     //once done reading the temp file, close it and remove it
     fclose(temp_file);
     remove(temp_filepath);
   }
 
+  printf("Finished writing the file locally.\n");
   fclose(main_file);
   return 1;
 }

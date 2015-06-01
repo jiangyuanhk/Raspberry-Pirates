@@ -404,8 +404,8 @@ void add_entry_to_downloadtable(downloadTable_t* downloadtable, downloadEntry_t*
   } 
 
   else {
-    downloadtable->tail->next = entry;
-    downloadtable->tail = downloadtable->tail->next;
+    downloadtable -> tail -> next = entry;
+    downloadtable -> tail = entry;
   }
 
   downloadtable->size++;
@@ -416,7 +416,7 @@ void add_entry_to_downloadtable(downloadTable_t* downloadtable, downloadEntry_t*
 downloadEntry_t* search_downloadtable_for_entry(downloadTable_t* downloadtable, char* filename) {
   pthread_mutex_lock(downloadtable -> mutex);
   if(downloadtable->size > 0){
-    downloadEntry_t* iter = downloadtable->head;
+    downloadEntry_t* iter = downloadtable -> head;
     
     while(iter){
       
@@ -437,15 +437,17 @@ int remove_entry_from_downloadtable(downloadTable_t* downloadtable, char* filena
   dummy->next = downloadtable->head;
 
   downloadEntry_t* iter = dummy;
-  while(iter->next){
-    if(strcmp(iter->next->file_name, filename) == 0){
+  while(iter -> next) {
+    if(strcmp(iter -> next -> file_name, filename) == 0) {
       downloadEntry_t* tobeDeleted = iter->next;
       iter->next = iter->next->next;
       free(tobeDeleted);
       pthread_mutex_unlock(downloadtable -> mutex);
       return 1;
     }
+    iter = iter -> next;
   }
+  
   pthread_mutex_unlock(downloadtable -> mutex);
   return -1;
 }
