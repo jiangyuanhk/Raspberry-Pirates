@@ -13,8 +13,8 @@
 #define HANDSHAKE_PORT 3409
 
 //Tracker Constants
-#define MONITOR_ALIVE_INTERVAL 1000			//TODO
-#define DEAD_PEER_TIMEOUT 1000				//TODO
+#define MONITOR_ALIVE_INTERVAL 30			//TODO
+#define DEAD_PEER_TIMEOUT 30				//TODO
 
 //Peer Constants
 #define P2P_PORT 3456

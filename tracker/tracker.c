@@ -242,6 +242,8 @@ void* monitorAlive(void* arg){
 					peertable_deleteEntryByIp(myPeerTablePtr, iter->ip);
 					//if dead, also remove this peerip from any entry's iplist in the table
 					filetable_deleteIpfromAllEntries(myFileTablePtr, iter->ip);
+          printf("There are peer(s) going offline\n");
+          peertable_printPeerTable(myPeerTablePtr);
 				}
         iter = iter -> next;
 			}
