@@ -711,11 +711,6 @@ int main(int argc, char *argv[]) {
   free(ip);
   free(register_pkt);
   printf("Successfully sent register packet.\n");
-
-
-  //Start the keep alive thread
-  pthread_t keep_alive_thread;
-  pthread_create(&keep_alive_thread, NULL, keep_alive, NULL);
   
 
   //--------------------File Monitor Thread-------------------------
@@ -764,6 +759,10 @@ int main(int argc, char *argv[]) {
   // start the thread to listen on the p2p port for connections from other peers
   pthread_t p2p_listening_thread;
   pthread_create(&p2p_listening_thread, NULL, p2p_listening, &tracker_connection);
+
+  //Start the keep alive thread
+  pthread_t keep_alive_thread;
+  pthread_create(&keep_alive_thread, NULL, keep_alive, NULL);
 
   while(noSIGINT) sleep(60);
 }

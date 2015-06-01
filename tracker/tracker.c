@@ -224,7 +224,7 @@ void *handshake(void* arg){
  * remove dead peer from peerTable, remove peerip from fileTable
  */
 void* monitorAlive(void* arg){
-	while(1){
+	while(1) {
 		//check periodically to prevent CPU burning...
 		sleep(MONITOR_ALIVE_INTERVAL);
 		
@@ -234,7 +234,7 @@ void* monitorAlive(void* arg){
 
 			//obtain current Time
 			unsigned long currentTime = getCurrentTime();
-			while(iter != NULL){
+			while(iter != NULL) {
 			//loop through peerTable
 			//check each peer if dead or alive
 				if(currentTime - iter->timestamp > DEAD_PEER_TIMEOUT) {
@@ -243,6 +243,7 @@ void* monitorAlive(void* arg){
 					//if dead, also remove this peerip from any entry's iplist in the table
 					filetable_deleteIpfromAllEntries(myFileTablePtr, iter->ip);
 				}
+        iter = iter -> next;
 			}
 		}
 
