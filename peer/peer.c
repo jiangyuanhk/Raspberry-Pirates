@@ -156,10 +156,14 @@ void* tracker_listening(void* arg) {
             filetable_appendFileEntry(filetable, new_folder);
             printf("Directory created: %s\n", file -> file_name);
         }
+
         else {
-          printf("File added. Need to download file: %s\n", file -> file_name);
-          pthread_t p2p_download_thread;
-          pthread_create(&p2p_download_thread, NULL, p2p_download_file, file);
+          //make sure that the file is not already being downloaded and if not, add to the peer table
+          if (search_downloadtable_for_entry(downloadtable, file -> file_name) == NULL) {
+            printf("File added. Need to download file: %s\n", file -> file_name);
+            pthread_t p2p_download_file_thread;
+            pthread_create(&p2p_download_file_thread, NULL, p2p_download_file, file);
+          }
         }
       }
 

@@ -418,6 +418,7 @@ downloadEntry_t* search_downloadtable_for_entry(downloadTable_t* downloadtable, 
       if(strcmp(iter->file_name, filename) == 0){
         return iter;
       }
+      iter = iter -> next;
     }
   }
 
