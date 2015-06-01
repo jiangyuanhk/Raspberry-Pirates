@@ -342,10 +342,11 @@ void* p2p_download(void* arg) {
       
       // if sending the metadata failed, we cannot send the piece so readd the piece to the piece list
       if ( (metadata = send_meta_data_info(peer_conn, entry -> file_name, piece -> start, piece -> size, piece -> piece_num)) == NULL) {
-        printf("Readding the piece to the piece list.\n");
+        printf("%s: Readding the piece to the piece list. Try again for piece.\n", ip);
         readd_piece_to_list(entry, piece);
-        close(peer_conn);
-        pthread_exit(NULL);
+        continue;
+        // close(peer_conn);
+        // pthread_exit(NULL);
       }
 
       //if we fail receiving the data from the peer, re-add the piece to the folder
@@ -353,8 +354,8 @@ void* p2p_download(void* arg) {
         printf("Error receiving the data p2p.  Re-adding the piece to the list.\n");
         readd_piece_to_list(entry, piece);
         free(metadata);
-        close(peer_conn);
-        pthread_exit(NULL);
+        // close(peer_conn);
+        // pthread_exit(NULL);
       }
 
       printf("Received a piece. Num: %d\n", piece -> piece_num);
@@ -391,9 +392,9 @@ void* p2p_download_file(void* arg) {
   }
 
   //wait until the pieces are all successfully downloaded
-  printf("Waiting for the pieces to all be received.\n");
+  printf("Waiting for the pieces to all be received for file: %s\n", entry -> file_name);
   while(entry -> successful_pieces != entry -> num_pieces);
-  printf("All of the pieces have been received.\n");
+  printf("All of the pieces have been received for file: %s\n", entry -> file_name);
  
   if (recombine_temp_files(entry -> file_name, entry -> num_pieces) < 0) {
     printf("Error recombining the temp files.  Could not updated the entry. \n");
