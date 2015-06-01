@@ -480,7 +480,7 @@ void FileBlockList_Append(FileBlockList* toAppend) {
 	else {
 		while(curr->next) {
 			printf("In block list append while loop\n");
-			curr = blockList->next;
+			curr = curr->next;
 		}
 		curr->next = toAppend;
 	}

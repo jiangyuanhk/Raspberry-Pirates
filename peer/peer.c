@@ -354,6 +354,7 @@ void* p2p_download(void* arg) {
         printf("Error receiving the data p2p.  Re-adding the piece to the list.\n");
         readd_piece_to_list(entry, piece);
         free(metadata);
+        continue;
         // close(peer_conn);
         // pthread_exit(NULL);
       }
