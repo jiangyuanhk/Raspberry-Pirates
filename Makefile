@@ -1,7 +1,7 @@
 all: fileMonitor/fileMonitorTestClient tracker peer
 
 fileMonitor/fileMonitor.o: fileMonitor/fileMonitor.c fileMonitor/fileMonitor.h
-	gcc -Wall -pedantic -std=c99 -D_POSIX_SOURCE -D_BSD_SOURCE -g -c fileMonitor/fileMonitor.c -o fileMonitor/fileMonitor.o
+	gcc -Wall -pedantic -std=c99 -D_POSIX_SOURCE -D_BSD_SOURCE -pthread -g -c fileMonitor/fileMonitor.c -o fileMonitor/fileMonitor.o
 fileMonitor/fileMonitorTestClient: fileMonitor/fileMonitorTestClient.c fileMonitor/fileMonitor.o 
 	gcc -Wall -pedantic -std=c99 -D_POSIX_SOURCE -D_BSD_SOURCE -g -pthread fileMonitor/fileMonitorTestClient.c fileMonitor/fileMonitor.o -o fileMonitor/fileMonitorTestClient
 tracker: tracker/tracker.h

@@ -20,6 +20,7 @@
 //global variable holding all the file info currently recorded
 FileInfo_table* ftable;
 FileBlockList* blockList;
+pthread_mutex_t blockList_mutex;     //block list mutex
 char* directory = NULL;
 int running = 1;
 
@@ -33,6 +34,7 @@ void *fileMonitorThread(void* arg) {
 	//cast args to be the function pointers given by the client
 	localFileAlerts* funcs = (localFileAlerts*)arg;
 
+	pthread_mutex_init(&blockList_mutex, NULL);
 	blockList = NULL;
 	//read the config file for necessary information
 	readConfigFile("./config");
@@ -547,8 +549,9 @@ void blockFileAddListening(char* filename) {
 	strcpy(blockAdd->filepath,filepath);
 	blockAdd->event = EVENT_ADDED;
 
-
+	pthread_mutex_lock(&blockList_mutex);
 	FileBlockList_Append(blockAdd);
+	pthread_mutex_unlock(&blockList_mutex);
 
 	blockFileWriteListening(filepath);
 	free(filepath);
@@ -568,8 +571,9 @@ void blockFileWriteListening(char* filename) {
 	strcpy(blockWrite->filepath,filepath);
 	blockWrite->event = EVENT_MODIFIED;
 
-
+	pthread_mutex_lock(&blockList_mutex);
 	FileBlockList_Append(blockWrite);
+	pthread_mutex_unlock(&blockList_mutex);
 	free(filepath);
 
 }
@@ -609,8 +613,9 @@ void blockFileDeleteListening(char* filename) {
 	}
 	free(filepath);
 
-
+	pthread_mutex_lock(&blockList_mutex);
 	FileBlockList_Append(blockDelete);
+	pthread_mutex_unlock(&blockList_mutex);
 
 }
 /*
@@ -628,7 +633,9 @@ int unblockFileAddListening(char* filename) {
 	if(!ret) {
 		printf("Unexpected unblock failure for file %s", filepath);
 	}
+	pthread_mutex_lock(&blockList_mutex);
 	ret += FileBlockList_Remove(filepath, event);
+	pthread_mutex_unlock(&blockList_mutex);
 
 	free(filepath);
 
@@ -646,7 +653,9 @@ int unblockFileWriteListening(char* filename) {
 
 	int event = EVENT_MODIFIED;
 
+	pthread_mutex_lock(&blockList_mutex);
 	int ret =  FileBlockList_Remove(filepath, event);
+	pthread_mutex_unlock(&blockList_mutex);
 
 	free(filepath);
 
@@ -663,8 +672,9 @@ int unblockFileDeleteListening(char* filename) {
 	char* filepath = validatePath(filename);
 
 	int event = EVENT_DELETED;
-
+	pthread_mutex_lock(&blockList_mutex);
 	int ret =  FileBlockList_Remove(filepath, event);
+	pthread_mutex_unlock(&blockList_mutex);
 
 	free(filepath);
 

@@ -21,6 +21,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <utime.h>
+#include <errno.h>
 
 #include "peer.h"
 #include "file_monitor.h"
@@ -44,7 +45,7 @@ int noSIGINT = 1;
 char* directory;
 fileTable_t* filetable;               //local file table to keep track of files in the directory
 downloadTable_t* downloadtable;      //peer table to keep track of ongoing downloading tasks
-pthread_mutex_t blockList_mutex;     //block list mutex
+
 
 //Function to connect the peer to the tracker on the HANDSHAKE Port.
 // Returns -1 if it failed to connect.  Otherwise, returns the sockfd
@@ -724,7 +725,7 @@ int main(int argc, char *argv[]) {
   };
 
   pthread_mutex_init(&blockList_mutex, NULL);
-
+  printf("Mutex init, Errno is %d\n", errno);
 
   pthread_t monitorthread;
   pthread_create(&monitorthread, NULL, fileMonitorThread, (void*) &myFuncs);
