@@ -489,7 +489,7 @@ fileTable_t* filetable_convertEntriesToFileTable(fileEntry_t* head_file) {
   	filetable -> tail -> next = NULL;
   }
 
-	return filetable;
+  return filetable;
 }
 
 

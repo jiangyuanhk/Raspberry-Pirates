@@ -365,6 +365,7 @@ void readd_piece_to_list(downloadEntry_t* download_entry, downloadPiece_t* piece
   }
 
   download_entry -> size ++;
+  pthread_mutex_unlock(download_entry -> mutex);
 }
 
 //Create struct to send to p2p upload thread.
@@ -379,7 +380,8 @@ arg_struct_t* create_arg_struct(downloadEntry_t* download_entry, char* ip) {
 }
 
 //free everything in the table, table, linked list of entries and the linked list of pieces for each entry
-void downloadtable_destroy(downloadTable_t* downloadtable){
+void downloadtable_destroy(downloadTable_t* downloadtable) {
+  pthread_mutex_lock(downloadtable -> mutex);
   if(downloadtable->size > 0){
     downloadEntry_t* iter = downloadtable->head;
     while(iter){
@@ -388,13 +390,14 @@ void downloadtable_destroy(downloadTable_t* downloadtable){
       free(tobeDeleted);
     }
   }
-
+  pthread_mutex_unlock(downloadtable -> mutex);
   free(downloadtable->mutex);
   free(downloadtable);
 }
 
 //add an entry that has already been init'ed with init downloadEntry to the download table
 void add_entry_to_downloadtable(downloadTable_t* downloadtable, downloadEntry_t* entry) {
+  pthread_mutex_lock(downloadtable -> mutex);
   if(downloadtable->size == 0) {
     downloadtable->head = entry;
     downloadtable->tail = entry;
@@ -406,27 +409,30 @@ void add_entry_to_downloadtable(downloadTable_t* downloadtable, downloadEntry_t*
   }
 
   downloadtable->size++;
+  pthread_mutex_unlock(downloadtable -> mutex);
 } 
 
 
 downloadEntry_t* search_downloadtable_for_entry(downloadTable_t* downloadtable, char* filename) {
+  pthread_mutex_lock(downloadtable -> mutex);
   if(downloadtable->size > 0){
     downloadEntry_t* iter = downloadtable->head;
     
     while(iter){
       
       if(strcmp(iter->file_name, filename) == 0){
+        pthread_mutex_unlock(downloadtable -> mutex);
         return iter;
       }
       iter = iter -> next;
     }
   }
-
+  pthread_mutex_unlock(downloadtable -> mutex);
   return NULL;
 }
 
 int remove_entry_from_downloadtable(downloadTable_t* downloadtable, char* filename){
-
+  pthread_mutex_lock(downloadtable -> mutex);
   downloadEntry_t* dummy = (downloadEntry_t*) malloc(sizeof(downloadEntry_t));
   dummy->next = downloadtable->head;
 
@@ -436,10 +442,11 @@ int remove_entry_from_downloadtable(downloadTable_t* downloadtable, char* filena
       downloadEntry_t* tobeDeleted = iter->next;
       iter->next = iter->next->next;
       free(tobeDeleted);
+      pthread_mutex_unlock(downloadtable -> mutex);
       return 1;
     }
   }
-
+  pthread_mutex_unlock(downloadtable -> mutex);
   return -1;
 }
 
