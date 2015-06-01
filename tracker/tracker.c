@@ -47,7 +47,7 @@ void broadcastFileTable() {
 	//send the pkt_response to all peers (broadcasting)
 	peerEntry_t* iter = myPeerTablePtr->head;
  	while(iter != NULL){
-    printf("Sending file table to ip: %s\n with sockfd: %d", iter -> ip, iter -> sockfd);
+    printf("Sending file table to ip: %s with sockfd: %d \n", iter -> ip, iter -> sockfd);
  		pkt_tracker_sendPkt(iter->sockfd, broadcast, myFileTablePtr -> filetable_mutex);
  		iter = iter->next;
  	}

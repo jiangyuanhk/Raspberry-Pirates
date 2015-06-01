@@ -119,7 +119,7 @@ if ( (num = recv(peer_conn, metadata, sizeof(file_metadata_t), 0)) < 0) {
   */
 int receive_data_p2p(int peer_tracker_conn, file_metadata_t* metadata){
 
-  char file_path[200];
+  char file_path[FILE_NAME_MAX_LEN];
 
   char int_buf[10];
   memset(int_buf, 0, 10);
@@ -447,7 +447,7 @@ int remove_entry_from_downloadtable(downloadTable_t* downloadtable, char* filena
     }
     iter = iter -> next;
   }
-  
+
   pthread_mutex_unlock(downloadtable -> mutex);
   return -1;
 }
