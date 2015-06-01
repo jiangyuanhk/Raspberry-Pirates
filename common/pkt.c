@@ -24,22 +24,22 @@ int pkt_tracker_recvPkt(int connfd, ptp_peer_t* pkt){
 
   int num;
 
-	if( (num = recv(connfd, &type, sizeof(int), 0)) < 0) {
+	if( (num = recv(connfd, &type, sizeof(int), 0)) <= 0) {
 		printf("err in %s: failed to receive type\n", __func__ );
 		return -1;
 	}
 
-	if( (num = recv(connfd, peer_ip, IP_LEN * sizeof(char), 0)) < 0){
+	if( (num = recv(connfd, peer_ip, IP_LEN * sizeof(char), 0)) <= 0){
 		printf("err in %s: failed to receive peer_ip\n", __func__ );
 		return -1;
 	}
 
-	if( (num = recv(connfd, &port, sizeof(int), 0)) < 0){
+	if( (num = recv(connfd, &port, sizeof(int), 0)) <= 0){
 		printf("err in %s: failed to receive type\n", __func__ );
 		return -1;
 	}
 
-	if( (num = recv(connfd, &filetablesize, sizeof(int), 0)) < 0){
+	if( (num = recv(connfd, &filetablesize, sizeof(int), 0)) <= 0){
 		printf("err in %s: failed to receive type\n", __func__ );
 		return -1;
 	}
@@ -59,7 +59,7 @@ int pkt_tracker_recvPkt(int connfd, ptp_peer_t* pkt){
 
     //lopp through and make sure receive the entire array
     while (total_received != totalBytes) {
-      if( (num_received = recv(connfd, recv_buf, totalBytes, 0)) < 0) {
+      if( (num_received = recv(connfd, recv_buf, totalBytes, 0)) <= 0) {
         printf("err in %s: failed to receive arraylist of entries\n", __func__);
         return -1;
       }
@@ -85,25 +85,25 @@ int pkt_peer_sendPkt(int connfd, ptp_peer_t* pkt, pthread_mutex_t* mutex) {
 	
 
 
-	if(send(connfd, &(pkt->type), sizeof(int), 0) < 0){
+	if(send(connfd, &(pkt->type), sizeof(int), 0) <= 0){
 		printf("err in %s: send type failed\n", __func__);
 		return -1;
 	}
 
 
-	if(send(connfd, &(pkt->peer_ip), IP_LEN * sizeof(char), 0) < 0){
+	if(send(connfd, &(pkt->peer_ip), IP_LEN * sizeof(char), 0) <= 0){
 		printf("err in %s: send peerip failed\n", __func__);
 		return -1;
 	}
 
 
-	if(send(connfd, &(pkt->port), sizeof(int), 0) < 0){
+	if(send(connfd, &(pkt->port), sizeof(int), 0) <= 0){
 		printf("err in %s: send entry number failed\n", __func__);
 		return -1;
 	}
 
 
-	if(send(connfd, &(pkt->filetablesize), sizeof(int), 0) < 0){
+	if(send(connfd, &(pkt->filetablesize), sizeof(int), 0) <= 0){
 		printf("err in %s: send filetablesize failed\n", __func__);
 		return -1;
 	}
@@ -112,7 +112,7 @@ int pkt_peer_sendPkt(int connfd, ptp_peer_t* pkt, pthread_mutex_t* mutex) {
 	if(pkt->filetablesize > 0){
 		int totalBytes = (pkt->filetablesize) * sizeof(fileEntry_t);
 		char* buf = filetable_convertFileEntriesToArray(pkt->filetableHeadPtr, pkt->filetablesize, mutex);
-		if(send(connfd, buf, totalBytes, 0) < 0){
+		if(send(connfd, buf, totalBytes, 0) <= 0){
 			printf("err in %s: send arraylist of entries failed\n", __func__);
 			return -1;
 		}
@@ -123,19 +123,19 @@ int pkt_peer_sendPkt(int connfd, ptp_peer_t* pkt, pthread_mutex_t* mutex) {
 
 int pkt_tracker_sendPkt(int connfd, ptp_tracker_t* pkt, pthread_mutex_t* mutex){
 
-	if(send(connfd, &(pkt->heartbeatinterval), sizeof(int), 0) < 0){
+	if(send(connfd, &(pkt->heartbeatinterval), sizeof(int), 0) <= 0){
 		printf("err in %s: send heartbeatinterval failed\n", __func__);
 		return -1;
 	}
 
 
-	if(send(connfd, &(pkt->piece_len), sizeof(int), 0) < 0){
+	if(send(connfd, &(pkt->piece_len), sizeof(int), 0) <= 0){
 		printf("err in %s: send piece_len failed\n", __func__);
 		return -1;
 	}
 
 
-	if(send(connfd, &(pkt->filetablesize), sizeof(int), 0) < 0){
+	if(send(connfd, &(pkt->filetablesize), sizeof(int), 0) <= 0){
 		printf("err in %s: send filetablesize failed\n", __func__);
 		return -1;
 	}
@@ -144,7 +144,7 @@ int pkt_tracker_sendPkt(int connfd, ptp_tracker_t* pkt, pthread_mutex_t* mutex){
 	if(pkt->filetablesize > 0){
 		int totalBytes = (pkt->filetablesize) * sizeof(fileEntry_t);
 		char* buf = filetable_convertFileEntriesToArray(pkt->filetableHeadPtr, pkt->filetablesize, mutex);
-		if(send(connfd, buf, totalBytes, 0) < 0){
+		if(send(connfd, buf, totalBytes, 0) <= 0){
 			printf("err in %s: send arraylist of entries failed\n", __func__);
 			return -1;
 		}
@@ -159,17 +159,17 @@ int pkt_peer_recvPkt(int connfd, ptp_tracker_t* pkt){
 	int heartbeatinterval, piece_len, filetablesize;
 	fileEntry_t* head = NULL;
 
-	if(recv(connfd, &heartbeatinterval, sizeof(int), 0) < 0){
+	if(recv(connfd, &heartbeatinterval, sizeof(int), 0) <= 0){
 		printf("err in %s: failed to receive heartbeatinterval\n", __func__ );
 		return -1;
 	}
 
-	if(recv(connfd, &piece_len, sizeof(int), 0) < 0){
+	if(recv(connfd, &piece_len, sizeof(int), 0) <= 0){
 		printf("err in %s: failed to receive piece_len\n", __func__ );
 		return -1;
 	}
 
-	if(recv(connfd, &filetablesize, sizeof(int), 0) < 0){
+	if(recv(connfd, &filetablesize, sizeof(int), 0) <= 0){
 		printf("err in %s: failed to receive filetablesize\n", __func__ );
 		return -1;
 	}
@@ -190,7 +190,7 @@ int pkt_peer_recvPkt(int connfd, ptp_tracker_t* pkt){
 
     //lopp through and make sure receive the entire array
     while (total_received != totalBytes) {
-      if( (num_received = recv(connfd, recv_buf, totalBytes, 0)) < 0) {
+      if( (num_received = recv(connfd, recv_buf, totalBytes, 0)) <= 0) {
         printf("err in %s: failed to receive arraylist of entries\n", __func__);
         return -1;
       }

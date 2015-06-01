@@ -704,6 +704,8 @@ void FileInfo_table_print(FileInfo_table* toPrint) {
 }
 
 void Blocklist_print() {
+		return;
+	}
 	printf("The blocklist is as follows:\n");
 	pthread_mutex_lock(&blockList_mutex);
 	FileBlockList* curr = blockList;
