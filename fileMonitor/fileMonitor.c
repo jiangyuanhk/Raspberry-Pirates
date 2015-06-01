@@ -326,6 +326,7 @@ FileInfo_table* getAllFilesInfo() {
 		return NULL;
 	}
 
+	//printf("Num files = %d\n", allfiles->num_files);
 	return allfiles;
 }
 /*
@@ -360,6 +361,9 @@ void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs) {
 	int change = 0;
 	for(i = 0; i < ftable->num_files; i++) {
 		filename = ftable->table[i].filepath;
+		if(!filename) {
+			continue;
+		}
 		filepath = validatePath(filename);
 
 		if(FilesInfo_table_search(filename, newtable) == -1 && !FileBlockList_Search(filepath, EVENT_DELETED)) {
@@ -375,6 +379,9 @@ void FilesInfo_UpdateAlerts(FileInfo_table* newtable, localFileAlerts* funcs) {
 	for(i = 0; i < newtable->num_files; i++) {
 		
 		filename = newtable->table[i].filepath;
+		if(!filename) {
+			continue;
+		}
 		char* filepath = validatePath(filename);
 
 		idx = FilesInfo_table_search(filename, ftable);
