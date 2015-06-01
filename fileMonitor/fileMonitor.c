@@ -65,7 +65,7 @@ void *fileMonitorThread(void* arg) {
 	while(running) {
 		//print table for testing
 		//FileInfo_table_print(ftable);
-		printf("File monitor is running\n");
+		//printf("File monitor is running\n");
 		Blocklist_print();
 		//get the updated table
 		FileInfo_table* newtable = getAllFilesInfo();
@@ -479,7 +479,7 @@ void FileBlockList_Append(FileBlockList* toAppend) {
 	}
 	else {
 		while(curr->next) {
-			printf("In block list append while loop\n");
+			//printf("In block list append while loop\n");
 			curr = curr->next;
 		}
 		curr->next = toAppend;
@@ -499,7 +499,7 @@ int FileBlockList_Search(char* filepath, int event) {
 		return 0;
 	}
 	while(curr->next) {
-		printf("In block list search while loop\n");
+		//printf("In block list search while loop\n");
 		if(strcmp(filepath, curr->filepath) == 0) {
 			if(curr->event == event) {
 				return 1;
@@ -530,7 +530,7 @@ int FileBlockList_Remove(char* filepath, int event) {
 		return ret;
 	}
 	while(curr) {
-		printf("In blocklist remove while loop\n");
+		//printf("In blocklist remove while loop\n");
 		//will do the wrong thing if file name is part of a larger file name
 		if(strncmp(filepath, curr->filepath, strlen(filepath)) == 0) {
 			if(curr->event == event) {
