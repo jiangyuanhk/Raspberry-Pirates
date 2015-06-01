@@ -436,6 +436,9 @@ void* p2p_download_file(void* arg) {
   remove_entry_from_downloadtable(downloadtable, file -> file_name);
   printf("Closing download file thread. \n");
   // if (file) free(file);
+  
+
+
 
   pthread_exit(NULL);
 }
@@ -458,7 +461,7 @@ void* p2p_upload(void* arg) {
     printf("Received the meta data info in upload thread.\n");
 
     //if the filename is not there, done uploading.
-    if (recv_metadata -> filename == NULL) {
+    if (recv_metadata ->filename[0] == 0) {
       printf("Error receiving metadata for the file\n");
       free(recv_metadata);
       pthread_exit(NULL);
